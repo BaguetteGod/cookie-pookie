@@ -1,0 +1,33 @@
+name: Update AMO listing
+
+# Sends docs/amo-listing.md (summary, description and privacy policy in every
+# language) to addons.mozilla.org whenever it changes on master.
+on:
+  push:
+    branches: [master]
+    paths: ["docs/amo-listing.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: amo-listing
+  cancel-in-progress: false
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Update the listing
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: node scripts/amo-listing.mjs
