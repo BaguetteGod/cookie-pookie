@@ -1,15 +1,31 @@
 /*
  * Cookie Pookie — background script.
- * Holds settings, decides whether content scripts may act on a site,
- * and keeps count of rejected banners.
+ * Serves autoconsent's rules and settings to each frame, runs the engine's
+ * main-world snippets, and keeps count of handled banners.
+ *
+ * vendor/autoconsent/background-lib.js is loaded first and provides
+ * CookiePookieAutoConsentLib = { snippets, filterCompactRules }.
  *
  * Storage (browser.storage.local):
  *   enabled:       boolean, global on/off (default true)
  *   disabledSites: string[], hostnames where Cookie Pookie stays out
- *   totalRejected: number, banners rejected since install
+ *   totalHandled:  number, banners handled since install
  */
+/* global CookiePookieAutoConsentLib */
 
-const DEFAULTS = { enabled: true, disabledSites: [], totalRejected: 0 };
+const DEFAULTS = { enabled: true, disabledSites: [], totalHandled: 0 };
+
+// Settings passed to the autoconsent engine. Anything left out uses the library default.
+const ENGINE_CONFIG = {
+  autoAction: "optOut", // always reject, never accept
+  enablePrehide: true, // hide known banners while the engine works, to avoid flicker
+  enableCosmeticRules: true, // hide banners that offer no real "reject" choice
+  enableGeneratedRules: true,
+  enableHeuristicDetection: true, // catch banners from platforms with no rule
+  heuristicMode: "reject", // heuristics only ever click reject buttons
+  enablePopupMutationObserver: true,
+  logs: { lifecycle: false, rulesteps: false, detectionsteps: false, evals: false, errors: true, messages: false, waits: false }
+};
 
 async function getSettings() {
   return { ...DEFAULTS, ...(await browser.storage.local.get(Object.keys(DEFAULTS))) };
@@ -23,47 +39,104 @@ function hostOf(url) {
   }
 }
 
-// Rejections per tab since the last page load, for the toolbar badge.
-const tabCounts = new Map();
+// The compact rules are ~360 KB, so load them once per background lifetime.
+let rulesPromise = null;
+function loadRules() {
+  if (!rulesPromise) {
+    rulesPromise = fetch(browser.runtime.getURL("vendor/autoconsent/compact-rules.json")).then((r) => r.json());
+  }
+  return rulesPromise;
+}
+
+// Banners handled per tab since its last page load: [{ cmp, cosmetic }].
+const tabResults = new Map();
 
 function setBadge(tabId) {
-  const count = tabCounts.get(tabId) || 0;
+  const count = (tabResults.get(tabId) || []).length;
   browser.action.setBadgeText({ tabId, text: count ? String(count) : "" });
   browser.action.setBadgeBackgroundColor({ tabId, color: "#8a5a2b" });
 }
 
-browser.runtime.onMessage.addListener(async (message, sender) => {
-  const tabId = sender.tab && sender.tab.id;
+async function handleInit(sender) {
+  const tabId = sender.tab.id;
+  const frameId = sender.frameId;
+  const frameUrl = sender.url || "";
+  const settings = await getSettings();
+  // Use the tab's top-level site, so the per-site switch also covers iframes.
+  const enabled = settings.enabled && !settings.disabledSites.includes(hostOf(sender.tab.url));
 
-  if (message.type === "shouldRun") {
-    // Decide by the tab's top-level site, so the per-site switch also covers iframes.
-    const settings = await getSettings();
-    const host = hostOf(sender.tab && sender.tab.url);
-    return { run: settings.enabled && !settings.disabledSites.includes(host) };
-  }
+  const rules = enabled
+    ? { autoconsent: [], compact: CookiePookieAutoConsentLib.filterCompactRules(await loadRules(), { url: frameUrl, mainFrame: frameId === 0 }) }
+    : { autoconsent: [] };
 
-  if (message.type === "handled") {
-    const { totalRejected } = await getSettings();
-    await browser.storage.local.set({ totalRejected: totalRejected + 1 });
-    if (tabId !== undefined) {
-      tabCounts.set(tabId, (tabCounts.get(tabId) || 0) + 1);
-      setBadge(tabId);
+  await browser.tabs.sendMessage(
+    tabId,
+    { type: "initResp", rules, config: { ...ENGINE_CONFIG, enabled } },
+    { frameId }
+  );
+}
+
+async function handleEval(message, sender) {
+  const tabId = sender.tab.id;
+  const frameId = sender.frameId;
+  let result = false;
+  const snippet = CookiePookieAutoConsentLib.snippets[message.snippetId];
+  if (snippet) {
+    try {
+      const [injection] = await browser.scripting.executeScript({
+        target: { tabId, frameIds: [frameId] },
+        world: "MAIN",
+        func: snippet
+      });
+      result = injection ? injection.result : false;
+    } catch (e) {
+      result = false;
     }
-    return { ok: true };
+  }
+  await browser.tabs.sendMessage(tabId, { id: message.id, type: "evalResp", result }, { frameId });
+}
+
+async function handleDone(message, sender) {
+  const tabId = sender.tab.id;
+  const results = tabResults.get(tabId) || [];
+  results.push({ cmp: message.cmp, cosmetic: Boolean(message.isCosmetic) });
+  tabResults.set(tabId, results);
+  setBadge(tabId);
+  const { totalHandled } = await getSettings();
+  await browser.storage.local.set({ totalHandled: totalHandled + 1 });
+}
+
+browser.runtime.onMessage.addListener((message, sender) => {
+  if (message.type === "getTabResults") {
+    return Promise.resolve({ results: tabResults.get(message.tabId) || [] });
   }
 
-  if (message.type === "getTabCount") {
-    return { count: tabCounts.get(message.tabId) || 0 };
+  // Everything below comes from the autoconsent engine in a content script.
+  if (!sender.tab) return undefined;
+  switch (message.type) {
+    case "init":
+      handleInit(sender).catch((e) => console.error("[Cookie Pookie] init failed", e));
+      break;
+    case "eval":
+      handleEval(message, sender).catch((e) => console.error("[Cookie Pookie] eval failed", e));
+      break;
+    case "autoconsentDone":
+      handleDone(message, sender);
+      break;
+    case "autoconsentError":
+      console.warn("[Cookie Pookie] engine error", message.details);
+      break;
+    default:
+      break;
   }
-
   return undefined;
 });
 
 browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === "loading") {
-    tabCounts.delete(tabId);
+    tabResults.delete(tabId);
     setBadge(tabId);
   }
 });
 
-browser.tabs.onRemoved.addListener((tabId) => tabCounts.delete(tabId));
+browser.tabs.onRemoved.addListener((tabId) => tabResults.delete(tabId));

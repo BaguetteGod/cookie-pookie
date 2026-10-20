@@ -2,24 +2,32 @@
 
 const $ = (id) => document.getElementById(id);
 
+function describe(results) {
+  if (!results.length) return "No cookie banner handled on this page.";
+  return results
+    .map(({ cmp, cosmetic }) => (cosmetic ? `Hid the ${cmp} banner (it had no reject option).` : `Rejected cookies on the ${cmp} banner.`))
+    .join(" ");
+}
+
 async function init() {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   let host = "";
   try {
-    host = new URL(tab.url).hostname;
+    const url = new URL(tab.url);
+    host = url.protocol.startsWith("http") ? url.hostname : "";
   } catch {
     host = "";
   }
 
-  const settings = await browser.storage.local.get({ enabled: true, disabledSites: [], totalRejected: 0 });
-  const { count } = await browser.runtime.sendMessage({ type: "getTabCount", tabId: tab.id });
+  const settings = await browser.storage.local.get({ enabled: true, disabledSites: [], totalHandled: 0 });
+  const { results } = await browser.runtime.sendMessage({ type: "getTabResults", tabId: tab.id });
 
   $("enabled").checked = settings.enabled;
   $("host").textContent = host || "this page";
   $("site").checked = !settings.disabledSites.includes(host);
   $("site").disabled = !host || !settings.enabled;
-  $("tab-count").textContent = count;
-  $("total").textContent = settings.totalRejected;
+  $("page-status").textContent = describe(results);
+  $("total").textContent = settings.totalHandled;
 
   $("enabled").addEventListener("change", async (e) => {
     await browser.storage.local.set({ enabled: e.target.checked });
