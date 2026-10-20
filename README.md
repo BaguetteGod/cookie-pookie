@@ -63,18 +63,19 @@ For it to open pull requests, enable **Settings → Actions → General → Work
 To update by hand:
 
 ```sh
-scripts/build-autoconsent.sh            # rebuild the pinned version
+npm ci                                  # installs the pinned esbuild
+scripts/build-autoconsent.sh            # rebuild the version in vendor/autoconsent/VERSION
 scripts/build-autoconsent.sh 16.58.0    # or move to a newer release
 npm test
 ```
 
-The script needs git plus either [bun](https://bun.sh) or Node with npx. `vendor/autoconsent/VERSION` records the exact release and commit.
+The script needs Node with npm. It builds from DuckDuckGo's published `@duckduckgo/autoconsent` npm package: the rules are copied as published, and the JavaScript is bundled from the package's sources with the esbuild version pinned in `package-lock.json`. The same version always gives byte-identical files, so anyone can check `vendor/autoconsent/` by rebuilding it. `vendor/autoconsent/VERSION` records the release, the package's integrity hash and the esbuild version.
 
 ## Before publishing
 
 - The add-on ID `cookie-pookie@baguettegod` in `manifest.json` is permanent once published; never change it.
 - `data_collection_permissions` in `manifest.json` declares that the add-on collects no data. Update it if that ever changes.
-- addons.mozilla.org asks for the source of bundled code. Point reviewers to `scripts/build-autoconsent.sh` and the autoconsent release in `vendor/autoconsent/VERSION`.
+- addons.mozilla.org asks for the source of bundled code. Upload `git archive` of the release commit and tell reviewers to run `npm ci && scripts/build-autoconsent.sh`, which reproduces `vendor/autoconsent/` byte for byte.
 - `vendor/autoconsent/` is under the Mozilla Public License 2.0, like the rest of Cookie Pookie; keep its `LICENSE` file and headers.
 
 ## License

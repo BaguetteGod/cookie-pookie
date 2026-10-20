@@ -1,9 +1,11 @@
-/* Built from DuckDuckGo autoconsent v16.57.0 (cd3c0e3a95691e84b71ba3d92fc72b1c1afef973).
+/* Built from DuckDuckGo autoconsent v16.57.0 (npm @duckduckgo/autoconsent).
  * Licensed under the Mozilla Public License 2.0, see LICENSE in this folder.
  * Source: https://github.com/duckduckgo/autoconsent */
+"use strict";
 (() => {
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/eval-snippets.ts
+  // lib/eval-snippets.ts
   var snippets = {
+    // code-based rules
     EVAL_0: () => console.log(1),
     EVAL_DIDOMI_OPT_OUT: () => {
       if (window.Didomi) {
@@ -29,14 +31,12 @@
     EVAL_CONSENTMANAGER_4: () => __cmp("setConsent", 1),
     EVAL_CONSENTMANAGER_5: () => __cmp("consentStatus").userChoiceExists,
     EVAL_CONSENTMANAGER_NCMP_REJECT: () => {
-      if (typeof window.__npcmp !== "function")
-        return false;
+      if (typeof window.__npcmp !== "function") return false;
       window.__npcmp("reject");
       return true;
     },
     EVAL_CONSENTMANAGER_NCMP_ACCEPT: () => {
-      if (typeof window.__npcmp !== "function")
-        return false;
+      if (typeof window.__npcmp !== "function") return false;
       window.__npcmp("save");
       return true;
     },
@@ -56,12 +56,16 @@
         return optionalServices.every((name) => !manager.consents[name]);
       } else if (klaroConfig && klaroConfig.storageMethod === "cookie") {
         const cookieName = klaroConfig.cookieName || klaroConfig.storageName;
-        const consents = JSON.parse(decodeURIComponent(document.cookie.split(";").find((c) => c.trim().startsWith(cookieName)).split("=")[1]));
+        const consents = JSON.parse(
+          decodeURIComponent(
+            document.cookie.split(";").find((c) => c.trim().startsWith(cookieName)).split("=")[1]
+          )
+        );
         return Object.keys(consents).filter((k) => optionalServices.includes(k)).every((k) => consents[k] === false);
       }
     },
     EVAL_KLARO_OPEN_POPUP: () => {
-      klaro.show(undefined, true);
+      klaro.show(void 0, true);
     },
     EVAL_KLARO_TRY_API_OPT_OUT: () => {
       if (window.klaro && typeof klaro.show === "function" && typeof klaro.getManager === "function") {
@@ -80,32 +84,45 @@
     EVAL_TRUSTARC_TOP: () => window && window.truste && window.truste.eu.bindMap.prefCookie === "0",
     EVAL_TRUSTARC_FRAME_TEST: () => window && window.QueryString && window.QueryString.preferences === "0",
     EVAL_TRUSTARC_FRAME_GTM: () => window && window.QueryString && window.QueryString.gtm === "1",
+    // declarative rules
     EVAL_ADOPT_TEST: () => !!localStorage.getItem("adoptConsentMode"),
     EVAL_ADULTFRIENDFINDER_TEST: () => !!localStorage.getItem("cookieConsent"),
     EVAL_AYLO_COOKIE_MANAGER_READY: () => !!(window.wl_cookie_consent_manager || window._Cookie_Consent_Manager_brand),
     EVAL_BAHN_TEST: () => utag.gdpr.getSelectedCategories().length === 1,
     EVAL_BIGCOMMERCE_CONSENT_MANAGER_DETECT: () => !!(window.consentManager && window.consentManager.version),
-    EVAL_BORLABS_0: () => !JSON.parse(decodeURIComponent(document.cookie.split(";").find((c) => c.indexOf("borlabs-cookie") !== -1).split("=", 2)[1])).consents.statistics,
+    EVAL_BORLABS_0: () => !JSON.parse(
+      decodeURIComponent(
+        document.cookie.split(";").find((c) => c.indexOf("borlabs-cookie") !== -1).split("=", 2)[1]
+      )
+    ).consents.statistics,
     EVAL_CC_BANNER2_0: () => !!document.cookie.match(/sncc=[^;]+D%3Dtrue/),
     EVAL_COINBASE_0: () => JSON.parse(decodeURIComponent(document.cookie.match(/cm_(eu|default)_preferences=([0-9a-zA-Z\\{\\}\\[\\]%:]*);?/)[2])).consent.length <= 1,
+    // the close icon is an SVG, which has no click() method
     EVAL_COOKIE_POPUP_CLOSE: () => document.querySelector("#cookie-popup #close-cookies").dispatchEvent(new MouseEvent("click", { bubbles: true })) || true,
     EVAL_COOKIE_LAW_INFO_0: () => {
-      if (CLI.disableAllCookies)
-        CLI.disableAllCookies();
-      if (CLI.reject_close)
-        CLI.reject_close();
+      if (CLI.disableAllCookies) CLI.disableAllCookies();
+      if (CLI.reject_close) CLI.reject_close();
       document.body.classList.remove("cli-barmodal-open");
       return true;
     },
     EVAL_COOKIE_LAW_INFO_DETECT: () => !!window.CLI,
-    EVAL_COOKIE_MANAGER_POPUP_0: () => JSON.parse(document.cookie.split(";").find((c) => c.trim().startsWith("CookieLevel")).split("=")[1]).social === false,
+    EVAL_COOKIE_MANAGER_POPUP_0: () => JSON.parse(
+      document.cookie.split(";").find((c) => c.trim().startsWith("CookieLevel")).split("=")[1]
+    ).social === false,
     EVAL_COOKIEALERT_0: () => document.querySelector("body").removeAttribute("style") || true,
     EVAL_COOKIEALERT_1: () => document.querySelector("body").removeAttribute("style") || true,
     EVAL_COOKIEALERT_2: () => window.CookieConsent.declined === true,
-    EVAL_COOKIEFIRST_0: () => ((o) => o.performance === false && o.functional === false && o.advertising === false)(JSON.parse(decodeURIComponent(document.cookie.split(";").find((c) => c.indexOf("cookiefirst") !== -1).trim()).split("=")[1])),
+    EVAL_COOKIEFIRST_0: () => ((o) => o.performance === false && o.functional === false && o.advertising === false)(
+      JSON.parse(
+        decodeURIComponent(
+          document.cookie.split(";").find((c) => c.indexOf("cookiefirst") !== -1).trim()
+        ).split("=")[1]
+      )
+    ),
     EVAL_COOKIEFIRST_1: () => document.querySelectorAll("button[data-cookiefirst-accent-color=true][role=checkbox]:not([disabled])").forEach((i) => i.getAttribute("aria-checked") === "true" && i.click()) || true,
     EVAL_COOKIEINFORMATION_0: () => CookieInformation.declineAllCategories() || true,
     EVAL_COOKIEINFORMATION_1: () => CookieInformation.submitAllCategories() || true,
+    // turn the single-button form into a decline submission, same fields as the CMP's own decline form
     EVAL_EE_CONSENT_DECLINE_0: () => document.querySelectorAll('#cookieConsentFormAccept input[name^="ee:cookies_"]').forEach((i) => i.value = "n") || true,
     EVAL_ETSY_0: () => document.querySelectorAll(".gdpr-overlay-body input").forEach((toggle) => {
       toggle.checked = false;
@@ -116,8 +133,7 @@
     EVAL_GDPR_LEGAL_COOKIE_DETECT_CMP: () => !!window.GDPR_LC,
     EVAL_GDPR_LEGAL_COOKIE_TEST: () => !!window.GDPR_LC?.userConsentSetting,
     EVAL_IUBENDA_0: () => document.querySelectorAll(".purposes-item input[type=checkbox]:not([disabled])").forEach((x) => {
-      if (x.checked)
-        x.click();
+      if (x.checked) x.click();
     }) || true,
     EVAL_IUBENDA_1: () => !!document.cookie.match(/_iub_cs-\d+=/),
     EVAL_KROWN_COOKIE_BANNER_TEST: () => localStorage.getItem("krown-cookie-banner") === "true",
@@ -125,20 +141,26 @@
     EVAL_MICROSOFT_1: () => Array.from(document.querySelectorAll("div > button")).filter((el) => el.innerText.match("Accept|Annehmen"))[0].click() || true,
     EVAL_MICROSOFT_2: () => !!document.cookie.match("MSCC|GHCC"),
     EVAL_MOOVE_0: () => document.querySelectorAll("#moove_gdpr_cookie_modal input").forEach((i) => {
-      if (!i.disabled)
-        i.checked = i.name === "moove_gdpr_strict_cookies" || i.id === "moove_gdpr_strict_cookies";
+      if (!i.disabled) i.checked = i.name === "moove_gdpr_strict_cookies" || i.id === "moove_gdpr_strict_cookies";
     }) || true,
     EVAL_NHNIEUWS_TEST: () => !!localStorage.getItem("psh:cookies-seen"),
     EVAL_OSANO_DETECT: () => !!window.Osano?.cm?.dialogOpen,
-    EVAL_PANDECTES_TEST: () => document.cookie.includes("_pandectes_gdpr=") && JSON.parse(atob(document.cookie.split(";").find((s) => s.trim().startsWith("_pandectes_gdpr")).split("=")[1])).status === "deny",
+    EVAL_PANDECTES_TEST: () => document.cookie.includes("_pandectes_gdpr=") && JSON.parse(
+      atob(
+        document.cookie.split(";").find((s) => s.trim().startsWith("_pandectes_gdpr")).split("=")[1]
+      )
+    ).status === "deny",
     EVAL_POVR_GOBACK: () => window.history.back() || true,
     EVAL_PUBTECH_0: () => document.cookie.includes("euconsent-v2") && (document.cookie.match(/.YAAAAAAAAAAA/) || document.cookie.match(/.aAAAAAAAAAAA/) || document.cookie.match(/.YAAACFgAAAAA/)),
-    EVAL_SHOPIFY_TEST: () => document.cookie.includes("gdpr_cookie_consent=0") || document.cookie.includes("_tracking_consent=") && JSON.parse(decodeURIComponent(document.cookie.split(";").find((s) => s.trim().startsWith("_tracking_consent")).split("=")[1])).purposes.a === false,
+    EVAL_SHOPIFY_TEST: () => document.cookie.includes("gdpr_cookie_consent=0") || document.cookie.includes("_tracking_consent=") && JSON.parse(
+      decodeURIComponent(
+        document.cookie.split(";").find((s) => s.trim().startsWith("_tracking_consent")).split("=")[1]
+      )
+    ).purposes.a === false,
     EVAL_SKYSCANNER_TEST: () => document.cookie.match(/gdpr=[^;]*adverts:::false/) && !document.cookie.match(/gdpr=[^;]*init:::true/),
     EVAL_SIRDATA_UNBLOCK_SCROLL: () => {
       document.documentElement.classList.forEach((cls) => {
-        if (cls.startsWith("sd-cmp-"))
-          document.documentElement.classList.remove(cls);
+        if (cls.startsWith("sd-cmp-")) document.documentElement.classList.remove(cls);
       });
       return true;
     },
@@ -156,12 +178,15 @@
         }
       }
       window.addEventListener("pagehide", () => {
-        if (root.dataset.previousScrollY)
-          root.dataset.previousScrollY = "null";
+        if (root.dataset.previousScrollY) root.dataset.previousScrollY = "null";
       });
       return true;
     },
-    EVAL_STEAMPOWERED_0: () => JSON.parse(decodeURIComponent(document.cookie.split(";").find((s) => s.trim().startsWith("cookieSettings")).split("=")[1])).preference_state === 2,
+    EVAL_STEAMPOWERED_0: () => JSON.parse(
+      decodeURIComponent(
+        document.cookie.split(";").find((s) => s.trim().startsWith("cookieSettings")).split("=")[1]
+      )
+    ).preference_state === 2,
     EVAL_TAKEALOT_0: () => document.body.classList.remove("freeze") || (document.body.style = "") || true,
     EVAL_TARTEAUCITRON_0: () => tarteaucitron.userInterface.respondAll(false) || true,
     EVAL_TARTEAUCITRON_1: () => tarteaucitron.userInterface.respondAll(true) || true,
@@ -189,7 +214,7 @@
     EVAL_WBD_LTP_CLOSE: () => document.querySelector("dialog#ltp-dialog").close() || true
   };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/encoding.ts
+  // lib/encoding.ts
   var compactedRuleSteps = [
     ["exists", "e"],
     ["visible", "v"],
@@ -202,11 +227,11 @@
   ];
   function clearUnusedStrings(ruleset, ignoreBeforeIndex = 0) {
     const { v, s, r } = ruleset;
-    const usedStringIds = new Set;
+    const usedStringIds = /* @__PURE__ */ new Set();
     function addStringIdsFromRuleSteps(steps) {
       steps.forEach((step) => {
         for (const [, shortKey] of compactedRuleSteps) {
-          if (step[shortKey] !== undefined) {
+          if (step[shortKey] !== void 0) {
             usedStringIds.add(step[shortKey]);
           }
         }
@@ -285,6 +310,6 @@
     };
   }
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/cookie-pookie/background-entry.js
+  // cookie-pookie/background-entry.js
   globalThis.CookiePookieAutoConsentLib = { snippets, filterCompactRules };
 })();

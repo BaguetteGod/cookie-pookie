@@ -1,11 +1,20 @@
-/* Built from DuckDuckGo autoconsent v16.57.0 (cd3c0e3a95691e84b71ba3d92fc72b1c1afef973).
+/* Built from DuckDuckGo autoconsent v16.57.0 (npm @duckduckgo/autoconsent).
  * Licensed under the Mozilla Public License 2.0, see LICENSE in this folder.
  * Source: https://github.com/duckduckgo/autoconsent */
+"use strict";
 (() => {
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/rules.ts
+  var __typeError = (msg) => {
+    throw TypeError(msg);
+  };
+  var __accessCheck = (obj, member, msg) => member.has(obj) || __typeError("Cannot " + msg);
+  var __privateGet = (obj, member, getter) => (__accessCheck(obj, member, "read from private field"), getter ? getter.call(obj) : member.get(obj));
+  var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot add the same private member more than once") : member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
+  var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "write to private field"), setter ? setter.call(obj, value) : member.set(obj, value), value);
+
+  // lib/rules.ts
   var SUPPORTED_RULE_STEP_VERSION = 3;
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/random.ts
+  // lib/random.ts
   function getRandomID() {
     if (crypto && typeof crypto.randomUUID !== "undefined") {
       return crypto.randomUUID();
@@ -13,14 +22,9 @@
     return Math.random().toString();
   }
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/eval-handler.ts
-  class Deferred {
-    id;
-    promise;
-    resolve;
-    reject;
-    timer;
-    constructor(id, timeout = 1000) {
+  // lib/eval-handler.ts
+  var Deferred = class {
+    constructor(id, timeout = 1e3) {
       this.id = id;
       this.promise = new Promise((resolve, reject) => {
         this.resolve = resolve;
@@ -30,9 +34,9 @@
         this.reject(new Error("timeout"));
       }, timeout);
     }
-  }
+  };
   var evalState = {
-    pending: new Map,
+    pending: /* @__PURE__ */ new Map(),
     sendContentMessage: null
   };
   function requestEval(code, snippetId) {
@@ -61,7 +65,7 @@
     }
   }
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/utils.ts
+  // lib/utils.ts
   function getStyleElement(styleOverrideElementId = "autoconsent-css-rules") {
     const styleSelector = `style#${styleOverrideElementId}`;
     const existingElement = document.querySelector(styleSelector);
@@ -136,6 +140,7 @@
     const defaultConfig = {
       enabled: true,
       autoAction: "optOut",
+      // if falsy, the extension will wait for an explicit user signal before opting in/out
       disabledCmps: [],
       enablePrehide: true,
       enableCosmeticRules: true,
@@ -144,7 +149,7 @@
       enablePopupMutationObserver: false,
       detectRetries: 20,
       isMainWorld: false,
-      prehideTimeout: 2000,
+      prehideTimeout: 2e3,
       visualTest: false,
       logs: {
         lifecycle: false,
@@ -158,6 +163,7 @@
       performanceLoggingEnabled: false,
       heuristicPopupSearchTimeout: 100,
       heuristicMode: "off"
+      // heuristic disabled by default
     };
     const updatedConfig = copyObject(defaultConfig);
     for (const key of Object.keys(defaultConfig)) {
@@ -176,9 +182,8 @@
   }
   function highlightNode(node) {
     const highlightedNode = node;
-    if (!node.style)
-      return;
-    if (highlightedNode.__oldStyles !== undefined) {
+    if (!node.style) return;
+    if (highlightedNode.__oldStyles !== void 0) {
       return;
     }
     if (node.hasAttribute("style")) {
@@ -211,9 +216,8 @@
   }
   function unhighlightNode(node) {
     const highlightedNode = node;
-    if (!node.style || !node.hasAttribute("style"))
-      return;
-    if (highlightedNode.__oldStyles !== undefined) {
+    if (!node.style || !node.hasAttribute("style")) return;
+    if (highlightedNode.__oldStyles !== void 0) {
       node.style.cssText = highlightedNode.__oldStyles;
       delete highlightedNode.__oldStyles;
     } else {
@@ -224,8 +228,9 @@
     return window.top === window && (!globalThis.location.ancestorOrigins || globalThis.location.ancestorOrigins.length === 0);
   }
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/eval-snippets.ts
+  // lib/eval-snippets.ts
   var snippets = {
+    // code-based rules
     EVAL_0: () => console.log(1),
     EVAL_DIDOMI_OPT_OUT: () => {
       if (window.Didomi) {
@@ -251,14 +256,12 @@
     EVAL_CONSENTMANAGER_4: () => __cmp("setConsent", 1),
     EVAL_CONSENTMANAGER_5: () => __cmp("consentStatus").userChoiceExists,
     EVAL_CONSENTMANAGER_NCMP_REJECT: () => {
-      if (typeof window.__npcmp !== "function")
-        return false;
+      if (typeof window.__npcmp !== "function") return false;
       window.__npcmp("reject");
       return true;
     },
     EVAL_CONSENTMANAGER_NCMP_ACCEPT: () => {
-      if (typeof window.__npcmp !== "function")
-        return false;
+      if (typeof window.__npcmp !== "function") return false;
       window.__npcmp("save");
       return true;
     },
@@ -278,12 +281,16 @@
         return optionalServices.every((name) => !manager.consents[name]);
       } else if (klaroConfig && klaroConfig.storageMethod === "cookie") {
         const cookieName = klaroConfig.cookieName || klaroConfig.storageName;
-        const consents = JSON.parse(decodeURIComponent(document.cookie.split(";").find((c) => c.trim().startsWith(cookieName)).split("=")[1]));
+        const consents = JSON.parse(
+          decodeURIComponent(
+            document.cookie.split(";").find((c) => c.trim().startsWith(cookieName)).split("=")[1]
+          )
+        );
         return Object.keys(consents).filter((k) => optionalServices.includes(k)).every((k) => consents[k] === false);
       }
     },
     EVAL_KLARO_OPEN_POPUP: () => {
-      klaro.show(undefined, true);
+      klaro.show(void 0, true);
     },
     EVAL_KLARO_TRY_API_OPT_OUT: () => {
       if (window.klaro && typeof klaro.show === "function" && typeof klaro.getManager === "function") {
@@ -302,32 +309,45 @@
     EVAL_TRUSTARC_TOP: () => window && window.truste && window.truste.eu.bindMap.prefCookie === "0",
     EVAL_TRUSTARC_FRAME_TEST: () => window && window.QueryString && window.QueryString.preferences === "0",
     EVAL_TRUSTARC_FRAME_GTM: () => window && window.QueryString && window.QueryString.gtm === "1",
+    // declarative rules
     EVAL_ADOPT_TEST: () => !!localStorage.getItem("adoptConsentMode"),
     EVAL_ADULTFRIENDFINDER_TEST: () => !!localStorage.getItem("cookieConsent"),
     EVAL_AYLO_COOKIE_MANAGER_READY: () => !!(window.wl_cookie_consent_manager || window._Cookie_Consent_Manager_brand),
     EVAL_BAHN_TEST: () => utag.gdpr.getSelectedCategories().length === 1,
     EVAL_BIGCOMMERCE_CONSENT_MANAGER_DETECT: () => !!(window.consentManager && window.consentManager.version),
-    EVAL_BORLABS_0: () => !JSON.parse(decodeURIComponent(document.cookie.split(";").find((c) => c.indexOf("borlabs-cookie") !== -1).split("=", 2)[1])).consents.statistics,
+    EVAL_BORLABS_0: () => !JSON.parse(
+      decodeURIComponent(
+        document.cookie.split(";").find((c) => c.indexOf("borlabs-cookie") !== -1).split("=", 2)[1]
+      )
+    ).consents.statistics,
     EVAL_CC_BANNER2_0: () => !!document.cookie.match(/sncc=[^;]+D%3Dtrue/),
     EVAL_COINBASE_0: () => JSON.parse(decodeURIComponent(document.cookie.match(/cm_(eu|default)_preferences=([0-9a-zA-Z\\{\\}\\[\\]%:]*);?/)[2])).consent.length <= 1,
+    // the close icon is an SVG, which has no click() method
     EVAL_COOKIE_POPUP_CLOSE: () => document.querySelector("#cookie-popup #close-cookies").dispatchEvent(new MouseEvent("click", { bubbles: true })) || true,
     EVAL_COOKIE_LAW_INFO_0: () => {
-      if (CLI.disableAllCookies)
-        CLI.disableAllCookies();
-      if (CLI.reject_close)
-        CLI.reject_close();
+      if (CLI.disableAllCookies) CLI.disableAllCookies();
+      if (CLI.reject_close) CLI.reject_close();
       document.body.classList.remove("cli-barmodal-open");
       return true;
     },
     EVAL_COOKIE_LAW_INFO_DETECT: () => !!window.CLI,
-    EVAL_COOKIE_MANAGER_POPUP_0: () => JSON.parse(document.cookie.split(";").find((c) => c.trim().startsWith("CookieLevel")).split("=")[1]).social === false,
+    EVAL_COOKIE_MANAGER_POPUP_0: () => JSON.parse(
+      document.cookie.split(";").find((c) => c.trim().startsWith("CookieLevel")).split("=")[1]
+    ).social === false,
     EVAL_COOKIEALERT_0: () => document.querySelector("body").removeAttribute("style") || true,
     EVAL_COOKIEALERT_1: () => document.querySelector("body").removeAttribute("style") || true,
     EVAL_COOKIEALERT_2: () => window.CookieConsent.declined === true,
-    EVAL_COOKIEFIRST_0: () => ((o) => o.performance === false && o.functional === false && o.advertising === false)(JSON.parse(decodeURIComponent(document.cookie.split(";").find((c) => c.indexOf("cookiefirst") !== -1).trim()).split("=")[1])),
+    EVAL_COOKIEFIRST_0: () => ((o) => o.performance === false && o.functional === false && o.advertising === false)(
+      JSON.parse(
+        decodeURIComponent(
+          document.cookie.split(";").find((c) => c.indexOf("cookiefirst") !== -1).trim()
+        ).split("=")[1]
+      )
+    ),
     EVAL_COOKIEFIRST_1: () => document.querySelectorAll("button[data-cookiefirst-accent-color=true][role=checkbox]:not([disabled])").forEach((i) => i.getAttribute("aria-checked") === "true" && i.click()) || true,
     EVAL_COOKIEINFORMATION_0: () => CookieInformation.declineAllCategories() || true,
     EVAL_COOKIEINFORMATION_1: () => CookieInformation.submitAllCategories() || true,
+    // turn the single-button form into a decline submission, same fields as the CMP's own decline form
     EVAL_EE_CONSENT_DECLINE_0: () => document.querySelectorAll('#cookieConsentFormAccept input[name^="ee:cookies_"]').forEach((i) => i.value = "n") || true,
     EVAL_ETSY_0: () => document.querySelectorAll(".gdpr-overlay-body input").forEach((toggle) => {
       toggle.checked = false;
@@ -338,8 +358,7 @@
     EVAL_GDPR_LEGAL_COOKIE_DETECT_CMP: () => !!window.GDPR_LC,
     EVAL_GDPR_LEGAL_COOKIE_TEST: () => !!window.GDPR_LC?.userConsentSetting,
     EVAL_IUBENDA_0: () => document.querySelectorAll(".purposes-item input[type=checkbox]:not([disabled])").forEach((x) => {
-      if (x.checked)
-        x.click();
+      if (x.checked) x.click();
     }) || true,
     EVAL_IUBENDA_1: () => !!document.cookie.match(/_iub_cs-\d+=/),
     EVAL_KROWN_COOKIE_BANNER_TEST: () => localStorage.getItem("krown-cookie-banner") === "true",
@@ -347,20 +366,26 @@
     EVAL_MICROSOFT_1: () => Array.from(document.querySelectorAll("div > button")).filter((el) => el.innerText.match("Accept|Annehmen"))[0].click() || true,
     EVAL_MICROSOFT_2: () => !!document.cookie.match("MSCC|GHCC"),
     EVAL_MOOVE_0: () => document.querySelectorAll("#moove_gdpr_cookie_modal input").forEach((i) => {
-      if (!i.disabled)
-        i.checked = i.name === "moove_gdpr_strict_cookies" || i.id === "moove_gdpr_strict_cookies";
+      if (!i.disabled) i.checked = i.name === "moove_gdpr_strict_cookies" || i.id === "moove_gdpr_strict_cookies";
     }) || true,
     EVAL_NHNIEUWS_TEST: () => !!localStorage.getItem("psh:cookies-seen"),
     EVAL_OSANO_DETECT: () => !!window.Osano?.cm?.dialogOpen,
-    EVAL_PANDECTES_TEST: () => document.cookie.includes("_pandectes_gdpr=") && JSON.parse(atob(document.cookie.split(";").find((s) => s.trim().startsWith("_pandectes_gdpr")).split("=")[1])).status === "deny",
+    EVAL_PANDECTES_TEST: () => document.cookie.includes("_pandectes_gdpr=") && JSON.parse(
+      atob(
+        document.cookie.split(";").find((s) => s.trim().startsWith("_pandectes_gdpr")).split("=")[1]
+      )
+    ).status === "deny",
     EVAL_POVR_GOBACK: () => window.history.back() || true,
     EVAL_PUBTECH_0: () => document.cookie.includes("euconsent-v2") && (document.cookie.match(/.YAAAAAAAAAAA/) || document.cookie.match(/.aAAAAAAAAAAA/) || document.cookie.match(/.YAAACFgAAAAA/)),
-    EVAL_SHOPIFY_TEST: () => document.cookie.includes("gdpr_cookie_consent=0") || document.cookie.includes("_tracking_consent=") && JSON.parse(decodeURIComponent(document.cookie.split(";").find((s) => s.trim().startsWith("_tracking_consent")).split("=")[1])).purposes.a === false,
+    EVAL_SHOPIFY_TEST: () => document.cookie.includes("gdpr_cookie_consent=0") || document.cookie.includes("_tracking_consent=") && JSON.parse(
+      decodeURIComponent(
+        document.cookie.split(";").find((s) => s.trim().startsWith("_tracking_consent")).split("=")[1]
+      )
+    ).purposes.a === false,
     EVAL_SKYSCANNER_TEST: () => document.cookie.match(/gdpr=[^;]*adverts:::false/) && !document.cookie.match(/gdpr=[^;]*init:::true/),
     EVAL_SIRDATA_UNBLOCK_SCROLL: () => {
       document.documentElement.classList.forEach((cls) => {
-        if (cls.startsWith("sd-cmp-"))
-          document.documentElement.classList.remove(cls);
+        if (cls.startsWith("sd-cmp-")) document.documentElement.classList.remove(cls);
       });
       return true;
     },
@@ -378,12 +403,15 @@
         }
       }
       window.addEventListener("pagehide", () => {
-        if (root.dataset.previousScrollY)
-          root.dataset.previousScrollY = "null";
+        if (root.dataset.previousScrollY) root.dataset.previousScrollY = "null";
       });
       return true;
     },
-    EVAL_STEAMPOWERED_0: () => JSON.parse(decodeURIComponent(document.cookie.split(";").find((s) => s.trim().startsWith("cookieSettings")).split("=")[1])).preference_state === 2,
+    EVAL_STEAMPOWERED_0: () => JSON.parse(
+      decodeURIComponent(
+        document.cookie.split(";").find((s) => s.trim().startsWith("cookieSettings")).split("=")[1]
+      )
+    ).preference_state === 2,
     EVAL_TAKEALOT_0: () => document.body.classList.remove("freeze") || (document.body.style = "") || true,
     EVAL_TARTEAUCITRON_0: () => tarteaucitron.userInterface.respondAll(false) || true,
     EVAL_TARTEAUCITRON_1: () => tarteaucitron.userInterface.respondAll(true) || true,
@@ -415,14 +443,16 @@
     return `(${snippetStr})()`;
   }
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/heuristic-patterns.ts
+  // lib/heuristic-patterns.ts
   var DETECT_PATTERNS = [
     /accept cookies/gi,
     /accept all/gi,
     /reject all/gi,
     /only necessary cookies/gi,
+    // "only necessary" is probably too broad
     /(?:by continuing.{0,100}cookie)|(?:cookie.{0,100}by continuing)/gi,
     /(?:by continuing.{0,100}privacy)|(?:privacy.{0,100}by continuing)/gi,
+    // a single qualifier is common: "optional", "essential", "necessary", "analytics", ...
     /we (?:use|serve)(?: \w+)? cookies/gi,
     /we are using cookies/gi,
     /use of cookies/gi,
@@ -436,6 +466,10 @@
     /we.{0,100}store.{0,100}information.{0,100}such as.{0,100}cookies/gi,
     /store and\/or access information.{0,100}on a device/gi,
     /personalised ads and content, ad and content measurement/gi,
+    // it might be tempting to add the patterns below, but they cause too many false positives. Don't do it :)
+    // /cookies? settings/i,
+    // /cookies? preferences/i,
+    // FR
     /utilisons.{0,100}des.{0,100}cookies/gi,
     /des.{0,100}cookies.{0,100}pour/gi,
     /retirer.{0,100}votre.{0,100}consentement/gi,
@@ -460,6 +494,7 @@
     /je désactive les finalités non essentielles/gi,
     /cookies essentiels uniquement/gi,
     /nécessaires uniquement/gi,
+    // DE
     /wir.{0,100}verwenden.{0,100}cookies/gi,
     /wir.{0,100}und.{0,100}unsere.{0,100}partner/gi,
     /zugriff.{0,100}auf.{0,100}informationen.{0,100}auf/gi,
@@ -478,6 +513,7 @@
     /nur funktionale cookies akzeptieren/gi,
     /optionale ablehnen/gi,
     /zustimmung verweigern/gi,
+    // NL
     /gebruik.{0,100}van.{0,100}cookies/gi,
     /(?:we|wij).{0,100}gebruiken.{0,100}cookies.{0,100}om/gi,
     /cookies.{0,100}en.{0,100}vergelijkbare/gi,
@@ -488,6 +524,7 @@
     /doorgaan zonder (?:te accepteren|akkoord te gaan)/gi,
     /alleen.{0,100}(?:optionele|functionele|functioneel|noodzakelijke|essentiële).{0,100}cookies/gi,
     /wijs alles af/gi,
+    // Spanish (ES)
     /(si|al) contin[úu]a[sr]?( navegando)?.{0,100} cookie/gi,
     /(usamos|utilizar?|utilizamos)( (tanto|las))?.{0,20}cookie/gi,
     /\b(hacemos|hace) uso de cookies\b/gi,
@@ -503,6 +540,10 @@
     /nosotros y nuestros( \d+)? (socios|proveedores).{0,180} cookies/gi,
     /recopilamos y almacenamos datos de usted y de su dispositivo/gi,
     /utilizamos tecnolog[ií]as como las cookies/gi,
+    // Polish (PL)
+    // examples:
+    //  wykorzystuje pliki cookie (uses cookies)
+    //  Wykorzystujemy informacje w plikach cookie (We use information in cookies)
     /(używamy|stosujemy|stosuje|wykorzystujemy|wykorzyst(uje|ywane))( są)?.{0,20} plik(i|ów|ach) cookie/gi,
     /(używać|używamy).{0,80} (ciasteczek|cookie)/gi,
     /cele przetwarzania twoich danych przez zaufanych partnerów iab/gi,
@@ -524,12 +565,14 @@
     /wykorzystują .{0,100}cookie/gi,
     /za pomocą plików cookies.{0,100} my lub nasi partnerzy/gi,
     /zgodą my i nasi partnerzy możemy wykorzystywać precyzyjne dane geolokalizacyjne i identyfikację/gi,
+    // Catalan (CA)
     /cookies pròpies i de tercers/gi,
     /utilitzem galetes/gi,
     /\búnicament utilitza galetes pròpies amb finalitat tècnica\b/gi,
     /este lloc web utilitza només cookies tècniques necessàries per al seu funcionament/gi,
     /utilitza cookies tècniques,\s*de personalització i anàlisi/gi,
     /utilitzem cookies i altres tecnologies/gi,
+    // Basque (EU)
     /cookie propio eta hirugarrenenak helburu teknikoarekin erabiltzen ditu/gi,
     /cookie propioak eta hirugarrenen cookieak erabiltzen ditugu/gi,
     /cookie propioak eta hirugarrenenak helburu teknikoarekin erabiltzen ditu/gi,
@@ -539,27 +582,48 @@
     /norberaren eta hirugarrenen cookie-?ak baino ez ditu erabiltzen/gi,
     /web orri honek cookieak erabiltzen ditu/gi,
     /webgune honek cookie propioak eta hirugarrenen cookie-fitxategiak erabiltzen ditu/gi,
+    // Galician (GL)
     /^\s*empregamos cookies propias\b/gi,
     /este portal emprega cookies propias ou de terceiros con fins analíticos/gi,
+    // Russian (RU)
+    // e.g. "мы используем файлы cookie", "сайт использует куки", "используются технологии cookie"
+    // note: \w does not match Cyrillic, so these use explicit character ranges
     /использу[а-яё]*.{0,40}(?:файл[а-яё]*[\s-]+)?(?:cookie|куки)/gi,
     /(?:cookie|куки).{0,40}использу[а-яё]*/gi,
     /(?:использовани[а-яё]*|обработк[а-яё]*|хранени[а-яё]*).{0,20}(?:файл(?:ов|ы)[\s-]+)?(?:cookie|куки)/gi,
     /технологи[а-яё]*\s+(?:cookie|куки)/gi,
+    // e.g. "сайт собирает cookie", "мы применяем файлы cookie", "сохраняем куки на вашем устройстве"
     /(?:собира[а-яё]*|сбор|применя[а-яё]*|сохраня[а-яё]*|размеща[а-яё]*|устанавлива[а-яё]*).{0,30}(?:файл[а-яё]*[\s-]+)?(?:cookie|куки)/gi,
+    // "файлы cookie" / "cookie-файлы" / "куки-файлы" in any phrasing
     /(?:файл[а-яё]*[\s-]+(?:cookie|куки)|(?:cookie|куки)[\s-]+файл[а-яё]*)/gi,
+    // Italian (IT)
     /usiamo.{0,20}cookie/gi,
+    // Japanese (JA)
+    // e.g. "当サイトはCookieを使用しています", "クッキー（Cookie）を利用しています"
     /(?:cookie|クッキー).{0,10}を(?:使用|利用)/gi
   ];
   var REJECT_PATTERNS_ENGLISH = [
+    // e.g. "reject", "reject all", "reject all cookies", "deny all", "refuse cookies", "decline",
+    // "reject non-essential cookies", "reject unnecessary cookies", "reject all but necessary", "reject all and close"
+    // note that "reject and subscribe" and "reject and pay" are excluded via BUTTON_NEVER_MATCH_PATTERNS
     /^\s*(no,?\s*)?(i\s+)?(reject|deny|refuse|decline|disable)\s*(all)?\s*(but|except)?\s*(non[- ]?essential|un(necessary|required)|optional|additional|targeting|analytics|marketing|non[- ]?necessary|extra|tracking|advertising|necessary|essential)?\s*(cookies)?\s*(and\s+close)?\s*$/is,
+    // e.g. "i do not accept", "do not accept cookies", "i do not accept the use of cookies"
     /^\s*(no,?\s*)?(i\s+)?do\s+not\s+accept\s*(the\s+use\s+of\s+)?(any\s+)?(cookies)?\s*$/is,
+    // e.g. "continue without accepting", "continue without agreeing", "continue without agreeing →"
     /^\s*(continue|proceed|continue\s+browsing)\s+without\s+(accepting|agreeing|consent|cookies|tracking)(\s*→)?\s*$/is,
+    // essential/necessary/functional-only, e.g. "essential cookies only", "accept only essential cookies",
+    // "allow necessary cookies continue", "use essential cookies only", "functional only", "essential only cookies", "i confirm necessary"
     /^\s*(i\s+)?(want\s+to\s+)?(only\s+)?(use|accept|allow|keep|enable|choose|continue\s+with|i\s+confirm)\s*(only\s+)?(strictly\s+)?(necessary|essential|essentials|functional|required|minimal)\s*(cookies)?\s*(continue|only)?\s*$/is,
     /^\s*(i\s+)?(want\s+to\s+)?only\s+(strictly\s+)?(necessary|essential|essentials|functional|required|minimal)\s*(cookies)?\s*(continue|only)?\s*$/is,
     /^\s*(strictly\s+)?(necessary|essential|essentials|functional|required|minimal)\s+((cookies\s+)?only|only\s+cookies)\s*$/is,
+    // e.g. "do not sell or share my personal information", "do not share my personal information", "opt out of sale ..." (CCPA)
+    // "do not sell page" is a link; "do not sellcookie settings" is two concatenated buttons
     /do\s+not\s+sell(?!\s*(page|cookie settings))|do\s+not\s+share\s+my\s+(personal\s+)?(information|info|data)|opt\s+out\s+of\s+sale/is,
+    // e.g. "opt-out of sale/share or targeted advertising", "opt-out of advertising/social media cookies"
     /^opt[ -]?out of /is,
+    // e.g. "reject all except strictly necessary", "reject all (except necessary cookies)"
     /except\s+(strictly\s+)?necessary/is,
+    // e.g. "disagree", "i disagree", "disagree and close"
     /^(i\s+)?disagree\s*(and\s+close)?$/i,
     "no",
     /^no,? thank(s| you)$/is,
@@ -568,11 +632,17 @@
     "i do not agree"
   ];
   var REJECT_PATTERNS_DUTCH = [
+    // weigeren / afwijzen / verwerpen (reject verbs, any position)
     /weiger|afwijz|verwerp/is,
+    // "wijs (alles/ze) af" (reject verb with split particle)
     /wijs\b.*\baf\b/is,
+    // "alleen/enkel/uitsluitend ... (noodzakelijk|functioneel|essentieel|...)"
     /(^|\s)(alleen|enkel|uitsluitend)\s+.{0,20}(noodzakelijk|functione|essenti|vereiste|verplichte|strikt|minimale|basis|basic|standaard)/is,
+    // essential/necessary-only nouns
     /^\s*(accepteer\s+|aanvaard\s+|gebruik\s+|sta\s+|ik wil\s+)?(alleen\s+|enkel\s+|uitsluitend\s+|strikt\s+)?(de\s+)?(noodzakelijke?|functionele?|functioneel|essentiële|essentieel|vereiste|verplichte|minimale|basiscookies|basis|standaard)\s*(cookies?)?\s*(accepteren|toestaan|aanvaarden)?\s*$/is,
+    // continue without accepting / consent
     /(doorgaan|ga door|ga verder|verder)\s+.{0,15}(zonder|aanvaard)/is,
+    // "nee" refusals (but not "nee, sluiten" → acknowledge)
     /^nee(,?\s+(bedankt|dank je|dankje|liever niet|liever geen cookies|geen persoonlijke cookies|geen cookies.*|weigeren?))?$/is,
     "niet accepteren",
     "niet akkoord",
@@ -583,16 +653,27 @@
     "functioneel altijd actief"
   ];
   var REJECT_PATTERNS_FRENCH = [
+    // refuser / rejeter / interdire / décliner (reject verbs, any position)
+    // "refuser et s'abonner" / "refuser et payer" are excluded via BUTTON_NEVER_MATCH_PATTERNS
+    // skip English prose such as "cookies that you can refuse"
     /^(?!.*\bcan refuse\b)(.*\s)?(refus|rejet|rejeter|interdire|interdis|déclin|declin)/is,
+    // only necessary / essential / technical / functional
     /^(?=.*(cookie|nécessaire|essentiel|techni|requis|obligatoire|fonctionnel|indispensable|sdk)).*(uniquement|seulement|indispensable|strictement nécessaire|que les cookies\s+(nécessaires|techniques|essentiels|indispensables|fonctionnels))/is,
+    // continue/proceed without accepting; refuse everything; disable purposes
     /(sans accepter|ne pas accepter|je naccepte rien|je désactive)/is,
+    // "non" / "non, merci"
     /^non(,?\s+merci\.?)?$/is
   ];
   var REJECT_PATTERNS_GERMAN = [
+    // "... ablehnen" / "ablehnen ..." (reject/decline). Exclude the settings-list phrase "einstell(ungen|en) oder ablehnen".
     /^(?!einstell(ungen|en) oder ablehnen$).*ablehnen/is,
+    // verweigern / verweigere / verweigert (refuse)
     /verweiger/is,
+    // essential/necessary/functional-only variants (accepting only necessary → reject)
     /^\s*(nur|ausschließlich|lediglich|weiter\s+mit|mit|akzeptiere?n?|unbedingt|es\s+werden\s+nur)?\s*(technisch\s+)?(notwendige?[nrs]?|essenzielle?[nrs]?|essentielle?[nrs]?|erforderliche?[nrs]?|funktionale?[nrs]?|funktionelle?[nrs]?|wesentliche?[nrs]?)\s*(cookies?|technologien|funktionscookies|dienste)?\s*(akzeptieren|erlauben|zulassen|verwenden|annehmen|setzen|speichern|zustimmen|auswählen)?\.?\s*$/is,
+    // continue without consent
     /(^|\s)(ohne\s+(zu\s+)?(einwilligung|zustimmung|einverständnis|annahme|annehmen|akzeptanz|akzeptieren)|(weiter|fortfahren)\s+ohne)/is,
+    // negations / refusals not covered by the regexes above
     "nein, danke",
     "nein, bitte nicht",
     "nein, ich stimme nicht zu",
@@ -604,65 +685,91 @@
     "mit notwendigen fortfahren"
   ];
   var REJECT_PATTERNS_ITALIAN = [
+    // rifiuta / rifiutare / rifiuto / nega / negare / blocca (reject verbs)
     /(^|\s)(rifiut|neg(a|are|hi)|blocca i cookie)/is,
+    // accept/use only necessary / essential / technical
     /^\s*(accetta|accettare|usa|installa|consenti|chiudi e prosegui( solo con)?)?\s*(solo|soltanto|unicamente)?\s*(i\s+|gli\s+)?(cookies?\s+)?(strettamente\s+)?(necessari|necessary|essenziali|tecnici|di navigazione)\s*(necessari|tecnici|essenziali)?\s*$/is,
+    // continue without accepting
     /continua(re)? senza accettare/is,
     "non accetto"
   ];
   var REJECT_PATTERNS_BRAZILIAN_PORTUGUESE = [
+    // (deny)
     /^\s*(rejeitar|recusar|desativar|bloquear|negar|não\s*aceito|não \s*aceitar)\s*$/is,
+    // (proceed) (without accepting)
     /^\s*(continuar|prosseguir|seguir)\s*(sem\s*aceitar)\s*$/is,
+    // (deny) (everything) (optional)
     /^\s*(rejeitar|recusar|desativar|bloquear|negar|não\s*aceito|não \s*aceitar)\s*(tudo|o)?\s*(opcional|(não[-\s](essencial|funcional|obrigatório|necessário)))?\s*$/is,
+    // (deny) (all) (the) (optional) (cookies)
     /^\s*(rejeitar|recusar|desativar|bloquear|negar|não\s*aceito|não \s*aceitar)\s*(todos)?\s*(os)?\s*(cookies)?\s*(opcionais|(não[-\s](essenciais|funcionais|obrigatórios|necessários)))?\s*$/is,
+    // (accept) (only) (the) (essential)
     /^\s*(aceitar|utilizar)?\s*(apenas|somente|só)?\s*(o)?\s*(essencial|funcional|obrigatório|necessário)\s*$/is,
+    // (accept) (only) (the) (essential) (cookies)
     /^\s*(aceitar|utilizar)?\s*(apenas|somente|só)?\s*(os)?\s*(cookies)?\s*(essenciais|funcionais|obrigatórios|necessários)\s*$/is
   ];
   var REJECT_PATTERNS_SPANISH = [
+    // rechazar / denegar / declinar / negar (reject verbs, any position)
+    // "rechazar y pagar" / "rechazar y suscribirse" are excluded via BUTTON_NEVER_MATCH_PATTERNS
     /(^|\s)(rechaz|recház|deneg|negar|declin)/is,
+    // accept/allow/use (only) necessary / essential / technical / functional / own
     /^\s*(aceptar?|acepta|permitir|permite|usar|utilizar)?\s*(solo|sólo|només|únicamente)?\s*(las?\s+|los\s+)?(cookies?\s+)?(estrictamente\s+)?(necesari\w*|esencial\w*|técnic\w*|obligatori\w*|funcional\w*|propias)\s*$/is,
+    // "solo/sólo/no, sólo ... necessary/essential"
     /^(no,?\s+)?(solo|sólo|només)\s+(usar\s+|las?\s+|los\s+|lo\s+)?.{0,20}(necesari|esencial|estrictamente)/is,
+    // refusals / opt-outs
     /^(no acept|no consentir|no permitir|no estoy de acuerdo|no,? gracias|sin consentimiento|continuar sin aceptar|prefiero rechazarlas|descartar todas)/is,
-    "acceptar només les necessàries",
-    "només sutilitzen cookies quan és necessari",
-    "pulsa aquí para desactivar las cookies opcionales"
+    "acceptar nom\xE9s les necess\xE0ries",
+    "nom\xE9s sutilitzen cookies quan \xE9s necessari",
+    "pulsa aqu\xED para desactivar las cookies opcionales"
   ];
   var REJECT_PATTERNS_SWEDISH = [
+    // avvisa / avböj / neka / förneka (reject verbs)
     /(^|\s)(avvisa|avböj|neka|nekar|förneka)/is,
+    // (allow/accept/use) only necessary cookies/kakor
     /(bara|endast|enbart)\s+nödvändig/is,
+    // "godkänn/acceptera/använd/tillåt (bara/endast/enbart) nödvändiga (cookies/kakor)"
     /^(ok,?\s+|nej,?\s+)?(jag\s+)?(godkänn\w*|godta|acceptera\w*|använd\w*|tillåt|spara)?\s*(bara|endast|enbart)?\s*(strikt\s+)?nödvändiga?t?( (cookies|kakor|tjänster))?\.?$/is,
+    // continue without accepting
     /fortsätt utan att (acceptera|godkänna)/is,
     /strikt nödvändig/is,
-    "tillåt inte cookies",
-    "jag accepterar endast grundläggande kakor"
+    "till\xE5t inte cookies",
+    "jag accepterar endast grundl\xE4ggande kakor"
   ];
-  var REJECT_PATTERNS_CATALAN = [/(^|\s)rebutj/is, "no accepto", "no, gràcies"];
+  var REJECT_PATTERNS_CATALAN = [/(^|\s)rebutj/is, "no accepto", "no, gr\xE0cies"];
   var REJECT_PATTERNS_GALICIAN = [/(^|\s)rexeitar/is];
   var REJECT_PATTERNS_BASQUE = [/(^|\s)(baztertu|ukatu)/is];
   var REJECT_PATTERNS_PORTUGUESE = [/^aceitar apenas cookies essenciais\.$/];
-  var REJECT_PATTERNS_CZECH = ["povolit pouze nezbytné cookie"];
+  var REJECT_PATTERNS_CZECH = ["povolit pouze nezbytn\xE9 cookie"];
   var REJECT_PATTERNS_POLISH = [
+    // odrzuć / odrzucam / odmawiam / rezygnuję / blokuj wszystkie (reject verbs)
     /odrzu(ć|cam|cenie|cać|canie|cić)|odmaw|odmowa|odmów|rezygnuj|blokuj wszystk/is,
+    // (accept) only necessary / required
     /(^|\s)tylko\s+(bezwzględnie\s+)?(niezbędn\w*|wymagan\w*|konieczne)/is,
     /(akceptuj|akceptuję|zaakceptuj|zatwierdź|potwierdzam|zezwól)\s+(tylko\s+)?(na\s+)?(niezbędn\w*|wymagan\w*|konieczne)/is,
     /korzystaj wyłącznie z niezbędn/is,
+    // continue without accepting / consent
     /kontynuuj bez (akceptacj|akceptowani|wyrażania zgody)/is,
+    // refusals
     /nie (akceptuję|zgadzam|wyrażam zgody|wyrażaj zgody|zezwalaj|potwierdzam)/is,
     /^nie(,?\s+(dziękuję|nie zgadzam.*))?$/is,
-    "niezbędne",
-    "niezbędne pliki cookie",
+    "niezb\u0119dne",
+    "niezb\u0119dne pliki cookie",
     /^funkcjonalne pliki cookie \(wymagane\)$/
   ];
   var REJECT_PATTERNS_RUSSIAN = [
+    // отклонить / отказаться / запретить (reject verbs); \w does not match Cyrillic
     /(^|\s)(отклон[а-яё]*|отказ[а-яё]*|откаж[а-яё]*|запрет[а-яё]*|запрещ[а-яё]*)/is,
+    // "только необходимые (файлы cookie)" / "принять только необходимые куки"
     /^\s*(принять\s+|принима[а-яё]+\s+|разрешить\s+|использовать\s+|оставить\s+)?(только|лишь)\s+(строго\s+)?(необходим[а-яё]+|нужн[а-яё]+|обязательн[а-яё]+|техническ[а-яё]+|функциональн[а-яё]+)(\s+файл[а-яё]*)?([\s-]+(cookie|куки)([\s-]+файл[а-яё]*)?)?\s*$/is,
+    // refusals: "не принимаю", "не согласен", "не соглашаюсь", "нет, спасибо"
     /^\s*(не\s+(принима[а-яё]+|соглас[а-яё]+|разреша[а-яё]+|хочу)|нет(,?\s+спасибо)?)\s*$/is
   ];
-  var REJECT_PATTERNS_TURKISH = ["reddet", "çerezleri reddet"];
+  var REJECT_PATTERNS_TURKISH = ["reddet", "\xE7erezleri reddet"];
   var REJECT_PATTERNS_INDONESIAN = ["tolak cookie"];
   var REJECT_PATTERNS_JAPANESE = [
+    // e.g. "拒否", "すべて拒否", "全て拒否する", "cookieを拒否"
     /^(すべて|全て)?\s?(の)?(cookie|クッキー)?\s?(を)?拒否(する)?$/i,
-    "同意しない",
-    "同意しません"
+    "\u540C\u610F\u3057\u306A\u3044",
+    "\u540C\u610F\u3057\u307E\u305B\u3093"
   ];
   var REJECT_PATTERNS = [
     ...REJECT_PATTERNS_ENGLISH,
@@ -685,6 +792,7 @@
     ...REJECT_PATTERNS_JAPANESE
   ];
   var BUTTON_NEVER_MATCH_PATTERNS = [
+    // text of several concatenated buttons, or popup body text rather than a button
     /accept all.*reject all|reject all.*accept all/is,
     /^.{300,}$/s,
     /pay|subscribe/is,
@@ -697,26 +805,39 @@
     /iscrivere/is,
     /sostienici/is,
     /suscribir/is,
+    // Spanish (ES)
     /^abandonar este sitio$/,
     /suscribo/,
     /^accede gratis con cookies publicitarias$/,
     /pagar/,
     /suscríbete/,
     /sin cookies .{0,10}euro/s,
+    // Polish (PL)
     /subskrybuj/,
+    // Russian (RU): paywall/subscription wording, e.g. "отказаться от подписки", "оплатить"
     /подписатьс|подписк|оплатит|оплачива/is
   ];
   var DETECT_NEVER_MATCH_PATTERNS = [
+    // e.g. "age verification", "age confirmation", "age check", "age gate", "age restriction"
     /age\s+(?:verification|confirmation|check|gate|restriction)/i,
+    // e.g. "over 18 years", "at least 21 years", "older than 21", "18+"
     /(?:over|above|at\s*least|minimum|older\s+than)\s*(?:18|21)\s*(?:years|yo|y\.?o\.?|\+)?/i,
+    // e.g. "18 years of age", "18+ years old", "21 years or older"
     /(?:18|21)\s*(?:\+|years?)\s*(?:of\s*age|or\s*older|or\s*above)/i,
+    // e.g. "I am 18+", "I am over 18", "I'm 21 or older"
     /(?:i'?m|i\s*am)\s*(?:over|above|at\s*least)?\s*(?:18|21)(?:\+|\s*(?:or\s*older|years))?/i,
+    // e.g. "you must be 18", "users must be at least 21", "visitors must be over 18"
     /(?:you|users?|visitors?)\s+must\s+be\s+(?:over|above|at\s*least)?\s*(?:18|21)/i,
+    // e.g. "adult oriented material", "adult content", "adult-only website"
     /adult[\s-]+(?:oriented|only|content|material|websites?)/i
   ];
   var SETTINGS_PATTERNS = [
+    // Multilingual "open customization" patterns: a customization verb next to a
+    // cookie/preference/settings/options/details/purposes noun (both word orders).
+    // The negative lookahead avoids policy links and save/confirm/accept phrases (those are accept/acknowledge/other).
     /^(?!.*\b(policy|policies|notice|statement|impressum|\w*richtlinie\w*|\w*erklärung|page|beschrijving|privacy$|beleid|politique|política|polityk|speichern|guardar|opslaan|zapisz|enregistrer|sauvegarder|bevestig|bestätig|confirm|save|submit|akzeptier|accept|zaakcept)\b)(customi[sz]e|manage|adjust|configure|personali[sz]e|let me choose|edit|change|set|select|view|see|review|update|open|show|choose|anpassen|verwalten|konfigurieren|bearbeiten|öffnen|anzeigen|einblenden|einstellen|festlegen|auswählen|wählen|aanpassen|beheren|instellen|wijzig\w*|personaliseren|personaliseer|kies|bekijk|toon|personnaliser|paramétrer|gérer|configurer|choisir|afficher|définir|modifier|configurar|personalizar|gestionar|administrar|ajustar|seleccionar|modificar|establecer|dostosuj|zarządzaj|personalizuj|ustaw\w*|zmień|pokaż|wybierz)\b.{0,20}(cookies?|preferences?|settings?|options?|choices?|controls?|details?|purposes?|services?|consent|einstellung\w*|optionen|präferenzen|einzelheiten|zwecke|dienste|datenschutz\w*|auswahl|voorkeur\w*|instelling\w*|opties|diensten|préférences|paramètres|réglages|choix|détails|finalités|témoins|preferencia\w*|opciones|ajustes|configuraci\w*|detalles|servicios|elección|preferencj\w*|ustawie\w*|opcje|szczegół\w*|cele|galetes)\b/is,
     /^(?!.*\b(policy|policies|notice|statement|impressum|\w*richtlinie\w*|\w*erklärung|page|beschrijving|privacy$|beleid|politique|política|polityk|speichern|guardar|opslaan|zapisz|enregistrer|sauvegarder|bevestig|bestätig|confirm|save|submit|akzeptier|accept|zaakcept)\b)(cookies?|preferences?|settings?|options?|choices?|controls?|details?|purposes?|services?|consent|einstellung\w*|optionen|präferenzen|einzelheiten|zwecke|dienste|datenschutz\w*|auswahl|voorkeur\w*|instelling\w*|opties|diensten|préférences|paramètres|réglages|choix|détails|finalités|témoins|preferencia\w*|opciones|ajustes|configuraci\w*|detalles|servicios|elección|preferencj\w*|ustawie\w*|opcje|szczegół\w*|cele|galetes)\b(.{0,14}\W)?(customi[sz]e|manage|adjust|configure|personali[sz]e|let me choose|edit|change|set|select|view|see|review|update|open|show|choose|anpassen|verwalten|konfigurieren|bearbeiten|öffnen|anzeigen|einblenden|einstellen|festlegen|auswählen|wählen|aanpassen|beheren|instellen|wijzig\w*|personaliseren|personaliseer|kies|bekijk|toon|personnaliser|paramétrer|gérer|configurer|choisir|afficher|définir|modifier|configurar|personalizar|gestionar|administrar|ajustar|seleccionar|modificar|establecer|dostosuj|zarządzaj|personalizuj|ustaw\w*|zmień|pokaż|wybierz)\b/is,
+    // settings noun + cookies, e.g. "paramètres des cookies", "ajustes de cookies", "instellingen voor cookies en diensten"
     /^(paramètres|préférences|réglages|ajustes|opciones|elección|preferencias|instellingen)( (de|des|les|voor|van))? cookies( (et des|en|y) (services|diensten|servicios))?$/is,
     "settings",
     "preferences",
@@ -735,7 +856,9 @@
     /^(?!.*\bpolic(y|ies)\b).*(manage|customize|customise|opt-out|edit).*(cookies|preferences|settings|options)/is,
     "cookie consent options",
     "privacy controls",
+    // German
     "einstellungen",
+    // Spanish (ES)
     /^(configurar|configuración|administrar)$/,
     /^(gestionar|ver|establecer) preferencias$/,
     "ajustes",
@@ -747,55 +870,62 @@
     "detalles",
     "gestiona tus preferencias",
     /^gestionar ?(las?|mis)? ?(configuración|preferencias)?(( de)? cookies?)?$/,
-    "gestión cookies",
-    "gestión de cookies",
+    "gesti\xF3n cookies",
+    "gesti\xF3n de cookies",
     "mis preferencias",
     "mostrar detalles",
-    "mostrar los propósitos",
-    "más opciones",
+    "mostrar los prop\xF3sitos",
+    "m\xE1s opciones",
     "no, ajustar",
-    "obtener más información y configuración",
-    "opciones de gestión",
-    "panel de configuración de cookies",
+    "obtener m\xE1s informaci\xF3n y configuraci\xF3n",
+    "opciones de gesti\xF3n",
+    "panel de configuraci\xF3n de cookies",
     "personalice",
     "personalizar",
     "preferencias de privacidad",
     "preferencias",
     "quiero configurarlas",
-    "saber más y personalizar",
+    "saber m\xE1s y personalizar",
     "seleccionar fines individuales",
+    // Catalan (CA)
     "configura-les",
     "personalitza",
-    "veure preferències",
+    "veure prefer\xE8ncies",
+    // Galician (GL)
     "xestionar preferencias",
+    // Basque (EU)
     /^(konfigurazioa|konfiguratu)$/,
+    // Portuguese (PT)
     "gerenciar cookies",
-    "paramétrage des cookies",
-    "paramétrer",
+    // French (FR)
+    "param\xE9trage des cookies",
+    "param\xE9trer",
     "personnaliser",
-    "paramètres",
-    "préférences",
-    "réglages",
-    "détails",
+    "param\xE8tres",
+    "pr\xE9f\xE9rences",
+    "r\xE9glages",
+    "d\xE9tails",
     "gestion des cookies",
     /^gérer (les |mes )?cookies$/,
     "je choisis",
-    "voir les préférences",
+    "voir les pr\xE9f\xE9rences",
+    // German (DE)
     "abschnitt einzelheiten",
     "cookie-details",
     /^datenschutz-?einstellungen$/,
     "cookie-einstellungen",
     /^einstell(ungen|en) oder ablehnen$/,
-    "auswählen",
+    "ausw\xE4hlen",
     /^einstellungen (anpassen|ansehen|verwalten|ändern)$/,
     "erweiterte einstellungen",
-    "individuelle datenschutz-präferenzen",
+    "individuelle datenschutz-pr\xE4ferenzen",
     "individuelle datenschutzeinstellungen",
     "konfigurieren",
     "mehr optionen",
-    "präferenzen",
+    "pr\xE4ferenzen",
     "individuelle einstellungen",
-    "privatsphäre einstellungen",
+    "privatsph\xE4re einstellungen",
+    // Dutch (NL)
     /^(aan|an)passen$/,
     /^cookie[- ]instellingen$/,
     "cookiestatement instellingen",
@@ -803,53 +933,64 @@
     "instellingen",
     "meer opties",
     "zelf instellen",
-    "podrobné nastavení",
+    // Czech (CS)
+    "podrobn\xE9 nastaven\xED",
+    // Polish (PL)
+    // examples:
+    //  dostosuj pliki cookie (adjust cookies)
+    //  zarządzaj plikami cookie (manage cookies)
     /^(dostosuj|s?personalizuj|chcę dostosować|zarządzaj) ?(moje|moimi)? ?(ustawieniami|preferencjami)? ?(zgody|wybory|(plik(i|ami|ów))? cookies?)?$/,
     /^(preferencje|zarządzaj preferencjami)$/,
     /^(ustawienia|zmień ustawienia|zmiana ustawień|zarządzaj opcjami)$/,
     "centrum preferencji",
     /^chcę dokonać ustawień cookies\.$/,
-    "dostosuj wybór",
+    "dostosuj wyb\xF3r",
     "edytuj ustawienia",
-    "konfiguracja zgód",
-    "otwórz ustawienia",
+    "konfiguracja zg\xF3d",
+    "otw\xF3rz ustawienia",
     "personalizacja",
-    "pokaż cele",
-    "pokaż szczegóły",
-    "szczegóły",
-    "pozwól mi wybrać",
+    "poka\u017C cele",
+    "poka\u017C szczeg\xF3\u0142y",
+    "szczeg\xF3\u0142y",
+    "pozw\xF3l mi wybra\u0107",
     /^przejdź do ustawień plików cookies\.$/,
-    "przejdź do ustawień prywatności",
-    "przejdź do ustawień",
+    "przejd\u017A do ustawie\u0144 prywatno\u015Bci",
+    "przejd\u017A do ustawie\u0144",
     "skonfiguruj",
     "ustaw swoje wybory",
     "ustawienia ciasteczek",
-    "ustawienia prywatności",
+    "ustawienia prywatno\u015Bci",
     "ustawienia zaawansowane",
     "ustawienia zgody",
     /^ustawienia(ch)?( plików)? cookies?$/,
     "ustawieniach",
-    "ustawień zaawansowanych",
-    "więcej opcji",
-    "więcej ustawień",
+    "ustawie\u0144 zaawansowanych",
+    "wi\u0119cej opcji",
+    "wi\u0119cej ustawie\u0144",
     /^wybierz, jakie pliki cookies chcesz zaakceptować\.$/,
     "zaawansowane",
-    "zarządzaj zgodami dotyczącymi plików cookies",
-    "zarządzaj zgodami",
-    "zarządzania zgodami",
-    "zarządzanie opcjami",
-    "zarządzanie preferencjami",
-    "zarządzanie ustawieniami plików cookie",
+    "zarz\u0105dzaj zgodami dotycz\u0105cymi plik\xF3w cookies",
+    "zarz\u0105dzaj zgodami",
+    "zarz\u0105dzania zgodami",
+    "zarz\u0105dzanie opcjami",
+    "zarz\u0105dzanie preferencjami",
+    "zarz\u0105dzanie ustawieniami plik\xF3w cookie",
     "zmieniam ustawienia",
     "zmieniam zgody",
-    "zmień swoje preferencje",
+    "zmie\u0144 swoje preferencje",
     /^zmień ustawienia( plików)? cookies?$/,
-    "zmień zgody",
+    "zmie\u0144 zgody",
     "zobacz preferencje",
+    // Russian (RU)
+    // e.g. "настроить", "настройки куки", "параметры конфиденциальности"; \w does not match Cyrillic
     /^\s*((мои|моими|свои|своими)\s+)?(настро[а-яё]+|парамет[а-яё]+|предпочтени[а-яё]+)([\s-]+(мои|моими|свои|своими|файл[а-яё]*|cookie|куки[а-яё]*|конфиденциальност[а-яё]*|согласи[а-яё]*|приватност[а-яё]*))*\s*$/is,
+    // e.g. "управление файлами cookie", "изменить настройки", "выбрать категории"
+    // "подробн" is deliberately excluded: it would also match the "подробнее о cookie" policy link
     /^\s*(управл[а-яё]+|измен[а-яё]+|выбрать|персонализ[а-яё]+|расширенн[а-яё]+|индивидуальн[а-яё]+)[\s-]+.{0,20}(настройк[а-яё]*|парамет[а-яё]*|предпочтени[а-яё]*|категори[а-яё]*|файл[а-яё]*|cookie|куки[а-яё]*|согласи[а-яё]*|конфиденциальност[а-яё]*)\s*$/is,
-    "подробные настройки",
+    "\u043F\u043E\u0434\u0440\u043E\u0431\u043D\u044B\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438",
+    // Italian (IT)
     "personalizza cookie",
+    // English (EN)
     "advanced settings",
     "consent settings",
     /^details (anzeigen|zeigen|section)$/,
@@ -859,17 +1000,24 @@
     "privacy manager"
   ];
   var ACCEPT_PATTERNS = [
+    // EN accept/agree/allow/consent/enable (+ all/cookies/selection/continue/close/proceed...).
+    // The negative lookahead avoids essential-only/reject wording (those are reject).
     /^(?!.*\b(essential|necessary|required|functional|minimal|reject|deny|refuse|decline|only|dismiss)\b)(?!.*all cookies continue)(yes,?\s+)?(i\s+)?(accept|agree|allow|consent|enable)(\s+(to\s+)?(all( cookies)?|cookies|selection|selected( cookies)?|everything|recommended( cookies| settings)?|optional( cookies)?|additional cookies|analytics cookies))?(\s+(and\s+)?(continue|close|proceed|save))?\s*$/is,
     /^continue (and accept|using cookies|with (all|recommended cookies|cookies))$/is,
+    // DE accept verbs
     /^(alle[sn]?\s+|allem\s+|ich\s+|cookies\s+|ausgewählte\s+|webanalyse\s+)?(cookies?\s+)?(akzeptieren|annehmen|zustimmen|zulassen|erlauben|einwilligen|aktivieren|auswählen)(\s+(und\s+)?(weiter|schlie(ß|ss)en))?\s*$/is,
     /^((meine\s+)?auswahl|alle)\s+(bestätigen|akzeptieren|auswählen)$/is,
     /^(alle[nm]?\s+)?(zustimmen|einverstanden|einwilligung|zustimmung)$/is,
     /^ich (bin einverstanden|akzeptiere( alle)?|stimme zu)$/is,
+    // NL accept verbs
     /^(ja,?\s+)?(alle[s]?\s+|ik\s+)?(cookies?\s+)?(accepteer|accepteren|toestaan|aanvaard|aanvaarden|ga akkoord|akkoord)(\s+((en\s+)?sluiten|en\s+(doorgaan|verdergaan)|cookies|alle))?\s*$/is,
     /^(selectie (accepteren|toestaan)|accepteer (selectie|alle)|alle (toestaan|accepteren|aanvaarden)|ja, (dat is prima|prima|alles toestaan|accepteren|ik accepteer cookies|ik ga akkoord)|is goed)$/is,
+    // FR accept verbs
     /^(oui,?\s+)?(je\s+)?(tout\s+)?(accepter|jaccepte|autoriser)(\s+(tout|tous les (cookies|témoins)|les (cookies|témoins)|la sélection|et (continuer|fermer|poursuivre)))?\s*$/is,
     /^(oui, (jaccepte|je suis daccord)|jaccepte (les cookies|lutilisation de cookies)|accepter (continuer|et poursuivre)|continuer et accepter|fermer et accepter)$/is,
+    // ES/CA accept verbs
     /^(sí,?\s+|si,?\s+)?(aceptar|acepta|permitir|permitirlas|consentir|estoy de acuerdo|de acuerdo|estic dacord)(\s+(todo|todas( las cookies)?|cookies|la selección|selección|y (cerrar|continuar|seguir( leyendo)?|leer gratis)))?\s*$/is,
+    // save / submit selection / preferences (accept semantics; acknowledge catches "guardar configuración/selección" first)
     /^(save|store|submit|guardar|sauvegarder|zapisz|opslaan|bewaar)\b.{0,25}(preference|setting|selection|choice|mes choix|cookie|voorkeur|keuze|ustawien|zgod)/is,
     /^((meine\s+)?auswahl|einstellungen|einwilligung|voorkeuren|instellingen|selectie|keuzes)\s+(speichern|opslaan)$/is,
     /i (accept|allow)( all)?/is,
@@ -878,6 +1026,7 @@
     "close and accept",
     /(^|\s)accept all$/is,
     "im ok with that",
+    // Spanish (ES)
     /^acept(ar|o)( cookies)?$/,
     /^acept(o|ar) todas las cookies$/,
     "aceptar cookies opcionales",
@@ -896,10 +1045,12 @@
     /^s[íi], acepto$/,
     /^s[íi], estoy de acuerdo$/,
     "x aceptar y cerrar",
+    // Catalan (CA)
     /^accept(ar|o)( cookies)?$/,
     "accepta",
     "accepta totes les cookies",
     "accepta-ho tot",
+    // FR/CA "d'accord" / "d'acord"
     /^dac?cord( fermer)?$/is,
     "accepta-les totes",
     "acceptar galetes",
@@ -908,68 +1059,89 @@
     "acepta-les totes",
     "permet-les totes",
     "permetre totes les cookies",
-    "permetre la selecció",
+    "permetre la selecci\xF3",
+    // Basque (EU)
     /^denak? onartu$/,
     /^onartu \(cookie\)$/,
     "onartu cookieak",
     "onartu",
+    // Portuguese (PT)
     "aceitar cookies",
     "aceitar",
     "de acordo",
+    // French (FR)
     /^accepter (tout|tous les cookies|fermer)$/,
+    // German (DE)
     /^(alles akzeptieren|alle zulassen|auswahl erlauben|cookies zulassen|einverstanden|einwilligung|zustimmen|zustimmung)$/,
+    // Dutch (NL)
     /^(accepteer (alles|alle cookies)|alles (accepteren|toestaan)|alle cookies (accepteren|toestaan))$/,
-    "souhlasím",
+    // Czech (CS)
+    "souhlas\xEDm",
+    // Polish (PL)
+    // examples:
+    //  akceptuj cookies (Accept cookies)
+    //  akceptuj wszystkie pliki cookie (Accept all cookies)
     /^(zaakceptuj|akceptuj[eę]|akceptuj) ?(wszystkie|wszystko)?( pliki)? ?(zgody|ciasteczka|cookies?)?$/,
-    "akceptowanie plików cookie",
+    "akceptowanie plik\xF3w cookie",
     "akceptuj wybrane",
     "akceptuj i zamknij",
-    "akceptuj wszystkie i przejdź do serwisu",
-    "akceptuję i przechodzę do serwisu",
-    "akceptuję politykę plików cookies i przechodzę do strony",
-    "akceptuję ustawienia cookies",
-    "akceptuję wszystkie i korzystam z usług",
-    "akceptuję!",
-    "ok, zgadzam się",
+    "akceptuj wszystkie i przejd\u017A do serwisu",
+    "akceptuj\u0119 i przechodz\u0119 do serwisu",
+    "akceptuj\u0119 polityk\u0119 plik\xF3w cookies i przechodz\u0119 do strony",
+    "akceptuj\u0119 ustawienia cookies",
+    "akceptuj\u0119 wszystkie i korzystam z us\u0142ug",
+    "akceptuj\u0119!",
+    "ok, zgadzam si\u0119",
     "potwierdzam wszystkie",
     "tak",
-    "tak, zgadzam się na wszystkie pliki cookie",
-    "tak, zgadzam się",
-    "wyraź zgodę na wszystko",
-    "wyrażam zgodę na wszystkie",
-    "wyrażam zgodę",
-    "włącz wszystkie ciasteczka",
+    "tak, zgadzam si\u0119 na wszystkie pliki cookie",
+    "tak, zgadzam si\u0119",
+    "wyra\u017A zgod\u0119 na wszystko",
+    "wyra\u017Cam zgod\u0119 na wszystkie",
+    "wyra\u017Cam zgod\u0119",
+    "w\u0142\u0105cz wszystkie ciasteczka",
     "zaakceptuj i kontynuuj",
     "zaakceptuj i zamknij",
-    "zaakceptuj wszystkie i przejdź do serwisu",
-    "zaakceptuj wszystkie zgody i wejdź do serwisu",
+    "zaakceptuj wszystkie i przejd\u017A do serwisu",
+    "zaakceptuj wszystkie zgody i wejd\u017A do serwisu",
     "zaakceptuj wszystkie zgody i zapisz",
-    "zatwierdź",
+    "zatwierd\u017A",
     "zezwolenie na wszystkie",
-    "zezwól na wszystkie ciasteczka",
-    "zezwól na wszystkie cookies",
-    "zezwól na wszystkie pliki cookies",
-    "zezwól na wszystkie",
-    "zezwól na wybór",
-    "zezwól",
-    "zgadzam się na wszystkie",
-    "zgadzam się",
+    "zezw\xF3l na wszystkie ciasteczka",
+    "zezw\xF3l na wszystkie cookies",
+    "zezw\xF3l na wszystkie pliki cookies",
+    "zezw\xF3l na wszystkie",
+    "zezw\xF3l na wyb\xF3r",
+    "zezw\xF3l",
+    "zgadzam si\u0119 na wszystkie",
+    "zgadzam si\u0119",
     "zgoda na wszystkie",
     "zgoda",
     "zaakceptuj wybrane",
-    "zezwól na wybrane",
+    "zezw\xF3l na wybrane",
     "zgoda na wybrane",
+    // Russian (RU)
+    // e.g. "принять всё", "принять все файлы cookie", "разрешить куки", "я согласен"
+    // confirm/save wording (подтвердить, сохранить) is acknowledge, not accept
     /^\s*(да,?\s+)?(я\s+)?(принять|принима[а-яё]+|соглас[а-яё]+|разрешить|разреша[а-яё]+)(\s+(вс[её]|(все\s+)?(файлы[\s-]+)?(cookie|куки)([\s-]+файл[а-яё]*)?|выбранные|выбор))?\s*$/is,
-    "принять",
+    "\u043F\u0440\u0438\u043D\u044F\u0442\u044C",
+    // Turkish (TR)
     "kabul et",
+    // Italian (IT)
     "accetta",
     "accetta tutti i cookie"
   ];
   var ACKNOWLEDGE_PATTERNS = [
+    // close / dismiss the banner/dialog/message (multilingual). The negative lookahead avoids
+    // accept/save phrases (e.g. "agree and close", "akkoord en sluiten", "speichern schließen").
     /^(?!.*\b(accept\w*|accepter|accepteer|accepteren|agree|allow|akkoord|aanvaard\w*|zustimm\w*|annehm\w*|akzeptier\w*|aceptar|acepta|permit\w*|consent\w*|einverstanden|zezw\w*|zgadzam|zgoda|guardar|opslaan|enregistrer|speicher\w*|zapisz)\b)(x\s+|nee,?\s+)?(close|dismiss|schlie(ß|ss)en|sluiten|afsluiten|fermer|cerrar|tanca|beenden|masquer|zamknij)( (this|the|ce|le|el|de|des|het|la|een)?\s*(banner|bandeau|banier|bar|dialog|dialogue|window|okno|melding|message|notification|informa\w*|notificaci\w*|cookie\w*|bannière|rgpd|gdpr|hier|des cookies|de cookies|x))*\.?\s*$/is,
+    // "ok" / "okay" / "oké" (optionally followed by a short acknowledgement)
     /^(ok|okay|oké|okey|k)([ .!,]*)(got it|verstanden|compris|rozumiem|thanks|gracias|ik begrijp( dat| het)?|continue to website|pour moi|fermer)?[ .!]*$/is,
+    // "understood" / "got it" / "that's ok" (multilingual)
     /^(i understand|understood|got it|thats (ok|fine|okay)|alright|alles klar|in ordnung|verstanden|begrepen|jai compris|je comprends|compris|ik begrijp het|ik snap het|entendido|c(e)?st ok pour moi)[ !.,]*(merci|bedankt|dismiss this banner)?[ !.]*$/is,
+    // confirm
     /^(confirm|bestätigen|bevestigen|confirmar|potwierdź)[ !.]*$/is,
+    // neutral "continue" without accept/reject wording
     /^(continuer|doorgaan|ga verder)$/is,
     "continue",
     "x",
@@ -978,52 +1150,60 @@
     /^close (banner|cookie notification)$/is,
     /understood$/is,
     "confirm my choices",
-    "speichern schließen",
+    // German (DE)
+    "speichern schlie\xDFen",
+    // Spanish (ES)
     /^.?( lo)?(entendido|entiendo).?$/s,
     "aceptar seleccionadas",
     "continuar",
-    "guardar configuración",
-    "guardar selección",
+    "guardar configuraci\xF3n",
+    "guardar selecci\xF3n",
     "guardar y cerrar",
     "ir al contenido principal",
     "seguir",
     "vale",
-    "¡vamos!",
+    "\xA1vamos!",
+    // Polish (PL)
     "kontynuuj",
-    "ok, zrozumiałem",
+    "ok, zrozumia\u0142em",
     /^ok.? rozumiem.?$/s,
     "rozumiem!",
     "rozumiem",
-    "rozumiem, nie pokazuj więcej",
-    "w porządku!",
-    "w porządku",
+    "rozumiem, nie pokazuj wi\u0119cej",
+    "w porz\u0105dku!",
+    "w porz\u0105dku",
     /^zamknij informację o( plikach)? cookies$/,
     "zapisz i zamknij",
+    // Russian (RU)
+    // e.g. "понятно", "всё понятно", "хорошо", "ясно"; \w does not match Cyrillic
     /^\s*(хорошо|ясно|(вс[её]\s+)?(понятно|понял[аи]?))[!.]*\s*$/is,
+    // e.g. "закрыть", "закрыть уведомление о cookie"
     /^\s*закрыть([\s-]+(это|эту|баннер|уведомлени[а-яё]*|окно|сообщени[а-яё]*|плашк[а-яё]*|информаци[а-яё]*)){0,2}([\s-]+(о|об)[\s-]+(cookie|куки[а-яё]*|файл[а-яё]*[\s-]+cookie))?\s*$/is,
+    // e.g. "больше не показывать", "не показывать снова"
     /^\s*(больше\s+не\s+показывать|не\s+показывать(\s+(снова|больше|это\s+сообщение))?)\s*$/is,
+    // e.g. "подтвердить", "подтверждаю выбор", "сохранить настройки", "сохранить и закрыть"
     /^\s*(подтвер(дить|ждаю|ждени[а-яё]*)|сохран(ить|яю|ение))([\s-]+(мой|мои|моё|свой|свои|своё)?[\s-]*(выбор[а-яё]*|настройк[а-яё]*|парамет[а-яё]*|предпочтени[а-яё]*|согласи[а-яё]*))?([\s-]+и[\s-]+(закрыть|продолжить))?\s*$/is,
-    "продолжить"
+    "\u043F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u044C"
   ];
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/heuristic-classify.ts
+  // lib/heuristic-classify.ts
   var TEXT_LIMIT = 1e5;
   function checkHeuristicPatterns(allText, detectPatterns = DETECT_PATTERNS) {
     allText = allText.slice(0, TEXT_LIMIT);
     const patterns = [];
-    const snippets = [];
+    const snippets2 = [];
     for (const p of detectPatterns) {
       const matches = allText?.match(p);
       if (matches) {
         patterns.push(p.toString());
         for (const m of matches) {
           if (typeof m === "string") {
-            snippets.push(m.substring(0, 200));
+            snippets2.push(m.substring(0, 200));
           }
         }
       }
     }
-    return { patterns, snippets };
+    return { patterns, snippets: snippets2 };
   }
   function classifyButtons(buttons) {
     for (const button of buttons) {
@@ -1038,12 +1218,15 @@
     return excludePatterns.some((p) => p.test(truncated));
   }
   function classifyPopup(buttons) {
-    const { reject, settings, accept, acknowledge } = buttons.reduce((acc, button) => {
-      if (button.regexClassification && button.regexClassification !== "other") {
-        acc[button.regexClassification]++;
-      }
-      return acc;
-    }, { reject: 0, settings: 0, accept: 0, acknowledge: 0 });
+    const { reject, settings, accept, acknowledge } = buttons.reduce(
+      (acc, button) => {
+        if (button.regexClassification && button.regexClassification !== "other") {
+          acc[button.regexClassification]++;
+        }
+        return acc;
+      },
+      { reject: 0, settings: 0, accept: 0, acknowledge: 0 }
+    );
     if (reject > 0) {
       return "reject";
     }
@@ -1068,7 +1251,10 @@
   function cleanButtonText(buttonText) {
     let result = buttonText.toLowerCase();
     result = result.replace(/[“”"'/#&[\]→✕×⟩❯><✗×‘’›«»]+/g, "");
-    result = result.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u2600-\u26FF\u2700-\u27BF\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]/gu, "");
+    result = result.replace(
+      /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u2600-\u26FF\u2700-\u27BF\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]/gu,
+      ""
+    );
     result = result.replace(/\n+/g, " ");
     result = result.replace(/\s+/g, " ");
     result = result.trim();
@@ -1090,7 +1276,7 @@
     return "other";
   }
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/heuristics.ts
+  // lib/heuristics.ts
   var BUTTON_LIKE_ELEMENT_SELECTOR = 'button, input[type="button"], input[type="submit"], a, [role="button"], [class*="button"]';
   var POPUP_SEARCH_MAX_TIME = 100;
   function getActionablePopups(mode = "reject", timeout = POPUP_SEARCH_MAX_TIME) {
@@ -1116,7 +1302,7 @@
       }
       return acc;
     }, []);
-    return result.filter((popup) => popup.regexClassification !== undefined && acceptedLevels.includes(popup.regexClassification)).sort((a, b) => (a.regexClassification ?? "") > (b.regexClassification ?? "") ? 1 : -1);
+    return result.filter((popup) => popup.regexClassification !== void 0 && acceptedLevels.includes(popup.regexClassification)).sort((a, b) => (a.regexClassification ?? "") > (b.regexClassification ?? "") ? 1 : -1);
   }
   function getPotentialPopups(timeout = POPUP_SEARCH_MAX_TIME) {
     const isFramed = !isTopFrame();
@@ -1158,34 +1344,42 @@
   }
   function getPopupLikeElements(timeout = POPUP_SEARCH_MAX_TIME) {
     const startTime = performance.now();
-    const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_ELEMENT, {
-      acceptNode(node) {
-        if (node.tagName === "BODY") {
+    const walker = document.createTreeWalker(
+      document.documentElement,
+      NodeFilter.SHOW_ELEMENT,
+      // visit only element nodes
+      {
+        acceptNode(node) {
+          if (node.tagName === "BODY") {
+            return NodeFilter.FILTER_SKIP;
+          }
+          if (isElementVisible(node)) {
+            const cssPosition = window.getComputedStyle(node).position;
+            if (cssPosition === "fixed" || cssPosition === "sticky") {
+              return NodeFilter.FILTER_ACCEPT;
+            }
+            if (isDialogLikeElement(node)) {
+              return NodeFilter.FILTER_ACCEPT;
+            }
+          }
+          if (performance.now() - startTime > timeout) {
+            return NodeFilter.FILTER_REJECT;
+          }
           return NodeFilter.FILTER_SKIP;
         }
-        if (isElementVisible(node)) {
-          const cssPosition = window.getComputedStyle(node).position;
-          if (cssPosition === "fixed" || cssPosition === "sticky") {
-            return NodeFilter.FILTER_ACCEPT;
-          }
-          if (isDialogLikeElement(node)) {
-            return NodeFilter.FILTER_ACCEPT;
-          }
-        }
-        if (performance.now() - startTime > timeout) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        return NodeFilter.FILTER_SKIP;
       }
-    });
+    );
     const found = [];
-    for (let node = walker.nextNode();node; node = walker.nextNode()) {
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       found.push(node);
     }
     return excludeContainers(found.filter((element) => element.innerText?.trim()));
   }
   function getButtonData(el) {
-    const actionableButtons = excludeContainers(getButtonLikeElements(el)).filter((b) => isElementVisible(b) && !isDisabled(b) && (b.innerText?.trim() || b instanceof HTMLInputElement && ["submit", "button"].includes(b.type) && b.value?.trim()));
+    const actionableButtons = excludeContainers(getButtonLikeElements(el)).filter(
+      (b) => isElementVisible(b) && !isDisabled(b) && (b.innerText?.trim() || // <input> values do not appear in innerText
+      b instanceof HTMLInputElement && ["submit", "button"].includes(b.type) && b.value?.trim())
+    );
     return actionableButtons.map((b) => ({
       text: (b.innerText || b.textContent || "").trim() || b.value?.trim() || "",
       element: b
@@ -1200,9 +1394,9 @@
   function excludeContainers(elements) {
     const results = [];
     if (elements.length > 0) {
-      for (let i = elements.length - 1;i >= 0; i--) {
+      for (let i = elements.length - 1; i >= 0; i--) {
         let container = false;
-        for (let j = 0;j < elements.length; j++) {
+        for (let j = 0; j < elements.length; j++) {
           if (i !== j && elements[i].contains(elements[j])) {
             container = true;
             break;
@@ -1216,18 +1410,16 @@
     return results;
   }
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/base.ts
+  // lib/cmps/base.ts
   var defaultRunContext = {
     main: true,
     frame: false,
     urlPattern: ""
   };
-
-  class AutoConsentCMPBase {
-    name = "BASERULE";
-    runContext = defaultRunContext;
-    autoconsent;
+  var AutoConsentCMPBase = class {
     constructor(autoconsentInstance) {
+      this.name = "BASERULE";
+      this.runContext = defaultRunContext;
       this.autoconsent = autoconsentInstance;
     }
     get hasSelfTest() {
@@ -1306,7 +1498,7 @@
     async test() {
       return Promise.resolve(true);
     }
-    async highlightElements(elements, all = false, delayTimeout = 2000) {
+    async highlightElements(elements, all = false, delayTimeout = 2e3) {
       if (elements.length === 0) {
         return;
       }
@@ -1326,6 +1518,7 @@
         unhighlightNode(el);
       }
     }
+    // Implementing DomActionsProvider below:
     async clickElement(element) {
       if (this.autoconsent.config.visualTest) {
         await this.highlightElements([element]);
@@ -1398,10 +1591,8 @@
     waitForMutation(selector) {
       return this.autoconsent.domActions.waitForMutation(selector);
     }
-  }
-
-  class AutoConsentCMP extends AutoConsentCMPBase {
-    rule;
+  };
+  var AutoConsentCMP = class extends AutoConsentCMPBase {
     constructor(rule, autoconsentInstance) {
       super(autoconsentInstance);
       this.rule = rule;
@@ -1491,16 +1682,16 @@
       if (rule.hide) {
         results.push(this.hide(rule.hide, rule.method));
       }
-      if (rule.stylesheet !== undefined) {
+      if (rule.stylesheet !== void 0) {
         results.push(this.stylesheet(rule.stylesheet, rule.stylesheetId));
       }
-      if (rule.removeClass !== undefined) {
+      if (rule.removeClass !== void 0) {
         results.push(rule.selector ? this.removeClass(rule.selector, rule.removeClass) : false);
       }
-      if (rule.setStyle !== undefined) {
+      if (rule.setStyle !== void 0) {
         results.push(rule.selector ? this.setStyle(rule.selector, rule.setStyle) : false);
       }
-      if (rule.addStyle !== undefined) {
+      if (rule.addStyle !== void 0) {
         results.push(rule.selector ? this.addStyle(rule.selector, rule.addStyle) : false);
       }
       if (rule.cookieContains) {
@@ -1562,17 +1753,16 @@
       }
       return true;
     }
-  }
-
-  class AutoConsentHeuristicCMP extends AutoConsentCMPBase {
-    popups = [];
-    mode;
+  };
+  var AutoConsentHeuristicCMP = class extends AutoConsentCMPBase {
     constructor(autoconsentInstance, mode = "reject") {
       super(autoconsentInstance);
+      this.popups = [];
       this.name = "HEURISTIC";
       this.runContext = {
         main: true,
         frame: false
+        // do not run in iframes for security reasons
       };
       this.mode = mode;
     }
@@ -1634,27 +1824,24 @@
       }
       return false;
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/trustarc-top.ts
+  // lib/cmps/trustarc-top.ts
   var cookieSettingsButton = "#truste-show-consent";
   var shortcutOptOut = "#truste-consent-required";
   var shortcutOptIn = "#truste-consent-button";
   var popupContent = "#truste-consent-content";
   var bannerOverlay = "#trustarc-banner-overlay";
   var bannerContainer = "#truste-consent-track";
-
-  class TrustArcTop extends AutoConsentCMPBase {
-    name = "TrustArc-top";
-    prehideSelectors = [".trustarc-banner-container", `.truste_popframe,.truste_overlay,.truste_box_overlay,${bannerContainer}`];
-    runContext = {
-      main: true,
-      frame: false
-    };
-    _shortcutButton;
-    _optInDone;
+  var TrustArcTop = class extends AutoConsentCMPBase {
     constructor(autoconsentInstance) {
       super(autoconsentInstance);
+      this.name = "TrustArc-top";
+      this.prehideSelectors = [".trustarc-banner-container", `.truste_popframe,.truste_overlay,.truste_box_overlay,${bannerContainer}`];
+      this.runContext = {
+        main: true,
+        frame: false
+      };
       this._shortcutButton = null;
       this._optInDone = false;
     }
@@ -1703,14 +1890,17 @@
       await this.wait(500);
       return await this.mainWorldEval("EVAL_TRUSTARC_TOP");
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/cookiebot.ts
-  class Cookiebot extends AutoConsentCMPBase {
-    name = "Cybotcookiebot";
-    prehideSelectors = [
-      "#CybotCookiebotDialog,#CybotCookiebotDialogBodyUnderlay,#dtcookie-container,#cookiebanner,#cb-cookieoverlay,.modal--cookie-banner,#cookiebanner_outer,#CookieBanner"
-    ];
+  // lib/cmps/cookiebot.ts
+  var Cookiebot = class extends AutoConsentCMPBase {
+    constructor() {
+      super(...arguments);
+      this.name = "Cybotcookiebot";
+      this.prehideSelectors = [
+        "#CybotCookiebotDialog,#CybotCookiebotDialogBodyUnderlay,#dtcookie-container,#cookiebanner,#cb-cookieoverlay,.modal--cookie-banner,#cookiebanner_outer,#CookieBanner"
+      ];
+    }
     get hasSelfTest() {
       return true;
     }
@@ -1732,7 +1922,7 @@
       }
       await this.wait(500);
       let res = await this.mainWorldEval("EVAL_COOKIEBOT_3");
-      await this.wait(1000);
+      await this.wait(1e3);
       res = res && await this.mainWorldEval("EVAL_COOKIEBOT_4");
       if (this.elementVisible("#CybotCookiebotDialogBodyButtonDecline")) {
         return await this.click("#CybotCookiebotDialogBodyButtonDecline");
@@ -1752,18 +1942,21 @@
       await this.wait(500);
       return await this.mainWorldEval("EVAL_COOKIEBOT_5");
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/sourcepoint-frame.ts
-  class SourcePoint extends AutoConsentCMPBase {
-    name = "Sourcepoint-frame";
-    prehideSelectors = ["div[id^='sp_message_container_'],.message-overlay", "#sp_privacy_manager_container"];
-    ccpaNotice = false;
-    ccpaPopup = false;
-    runContext = {
-      main: true,
-      frame: true
-    };
+  // lib/cmps/sourcepoint-frame.ts
+  var SourcePoint = class extends AutoConsentCMPBase {
+    constructor() {
+      super(...arguments);
+      this.name = "Sourcepoint-frame";
+      this.prehideSelectors = ["div[id^='sp_message_container_'],.message-overlay", "#sp_privacy_manager_container"];
+      this.ccpaNotice = false;
+      this.ccpaPopup = false;
+      this.runContext = {
+        main: true,
+        frame: true
+      };
+    }
     get hasSelfTest() {
       return false;
     }
@@ -1790,13 +1983,16 @@
         return true;
       }
       if (this.ccpaPopup) {
-        return await this.waitForElement(".priv-save-btn", 2000);
+        return await this.waitForElement(".priv-save-btn", 2e3);
       }
-      await this.waitForElement(".sp_choice_type_11,.sp_choice_type_12,.sp_choice_type_13,.sp_choice_type_ACCEPT_ALL,.sp_choice_type_SAVE_AND_EXIT", 2000);
+      await this.waitForElement(
+        ".sp_choice_type_11,.sp_choice_type_12,.sp_choice_type_13,.sp_choice_type_ACCEPT_ALL,.sp_choice_type_SAVE_AND_EXIT",
+        2e3
+      );
       return !this.elementExists(".sp_choice_type_9");
     }
     async optIn() {
-      await this.waitForElement(".sp_choice_type_11,.sp_choice_type_ACCEPT_ALL", 2000);
+      await this.waitForElement(".sp_choice_type_11,.sp_choice_type_ACCEPT_ALL", 2e3);
       if (await this.click(".sp_choice_type_11")) {
         return true;
       }
@@ -1818,21 +2014,28 @@
       await this.wait(500);
       const logsConfig = this.autoconsent.config.logs;
       if (this.ccpaPopup) {
-        const toggles = document.querySelectorAll(".priv-purpose-container .sp-switch-arrow-block a.neutral.on .right");
+        const toggles = document.querySelectorAll(
+          ".priv-purpose-container .sp-switch-arrow-block a.neutral.on .right"
+        );
         for (const t of toggles) {
           t.click();
         }
-        const switches = document.querySelectorAll(".priv-purpose-container .sp-switch-arrow-block a.switch-bg.on");
+        const switches = document.querySelectorAll(
+          ".priv-purpose-container .sp-switch-arrow-block a.switch-bg.on"
+        );
         for (const t of switches) {
           t.click();
         }
         return await this.click(".priv-save-btn");
       }
       if (this.elementVisible(".sp_choice_type_SE", "any")) {
-        await this.click([
-          "xpath///div[contains(., 'Do not share my personal information') and contains(@class, 'switch-container')]",
-          ".pm-switch[aria-checked=false] .slider"
-        ], false);
+        await this.click(
+          [
+            "xpath///div[contains(., 'Do not share my personal information') and contains(@class, 'switch-container')]",
+            ".pm-switch[aria-checked=false] .slider"
+          ],
+          false
+        );
         return await this.click(".sp_choice_type_SE");
       }
       if (!this.isManagerOpen()) {
@@ -1847,7 +2050,7 @@
         await this.click(manageSelector);
         await waitFor(() => this.isManagerOpen(), 200, 100);
       }
-      await this.waitForElement(".type-modal", 20000);
+      await this.waitForElement(".type-modal", 2e4);
       if (this.elementExists("[role=tablist]")) {
         await this.waitForElement("[role=tablist] [role=tab]", 1e4);
       }
@@ -1856,9 +2059,9 @@
         const rejectSelector1 = ".sp_choice_type_REJECT_ALL";
         const rejectSelector2 = ".reject-toggle";
         const path = await Promise.race([
-          this.waitForElement(rejectSelector1, 2000).then((success) => success ? 0 : -1),
-          this.waitForElement(rejectSelector2, 2000).then((success) => success ? 1 : -1),
-          this.waitForElement(".pm-features", 2000).then((success) => success ? 2 : -1)
+          this.waitForElement(rejectSelector1, 2e3).then((success) => success ? 0 : -1),
+          this.waitForElement(rejectSelector2, 2e3).then((success) => success ? 1 : -1),
+          this.waitForElement(".pm-features", 2e3).then((success) => success ? 2 : -1)
         ]);
         if (path === 0) {
           await this.waitForVisible(rejectSelector1);
@@ -1875,13 +2078,16 @@
       }
       return await this.click(".sp_choice_type_SAVE_AND_EXIT");
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/consentmanager.ts
-  class ConsentManager extends AutoConsentCMPBase {
-    name = "consentmanager.net";
-    prehideSelectors = ["#cmpbox,#cmpbox2"];
-    apiAvailable = false;
+  // lib/cmps/consentmanager.ts
+  var ConsentManager = class extends AutoConsentCMPBase {
+    constructor() {
+      super(...arguments);
+      this.name = "consentmanager.net";
+      this.prehideSelectors = ["#cmpbox,#cmpbox2"];
+      this.apiAvailable = false;
+    }
     get hasSelfTest() {
       return this.apiAvailable;
     }
@@ -1922,7 +2128,7 @@
         return true;
       }
       await this.click(".cmpboxbtncustom");
-      await this.waitForElement(".cmptblbox", 2000);
+      await this.waitForElement(".cmptblbox", 2e3);
       await this.click(".cmptdchoice > a[aria-checked=true]", true);
       await this.click(".cmpboxbtnyescustomchoices");
       this.hide("#cmpwrapper,#cmpbox", "display");
@@ -1940,11 +2146,14 @@
       }
       return false;
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/evidon.ts
-  class Evidon extends AutoConsentCMPBase {
-    name = "Evidon";
+  // lib/cmps/evidon.ts
+  var Evidon = class extends AutoConsentCMPBase {
+    constructor() {
+      super(...arguments);
+      this.name = "Evidon";
+    }
     get hasSelfTest() {
       return false;
     }
@@ -1966,7 +2175,7 @@
       }
       hideElements(getStyleElement(), "#evidon-prefdiag-overlay,#evidon-prefdiag-background,#_evidon-background");
       await this.waitForThenClick("#_evidon-option-button");
-      await this.waitForElement("#evidon-prefdiag-overlay", 5000);
+      await this.waitForElement("#evidon-prefdiag-overlay", 5e3);
       await this.wait(500);
       await this.waitForThenClick("#evidon-prefdiag-decline");
       return true;
@@ -1974,12 +2183,15 @@
     async optIn() {
       return await this.click("#_evidon-accept-button");
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/onetrust.ts
-  class Onetrust extends AutoConsentCMPBase {
-    name = "Onetrust";
-    prehideSelectors = ["#onetrust-banner-sdk,#onetrust-consent-sdk,.onetrust-pc-dark-filter,.js-consent-banner"];
+  // lib/cmps/onetrust.ts
+  var Onetrust = class extends AutoConsentCMPBase {
+    constructor() {
+      super(...arguments);
+      this.name = "Onetrust";
+      this.prehideSelectors = ["#onetrust-banner-sdk,#onetrust-consent-sdk,.onetrust-pc-dark-filter,.js-consent-banner"];
+    }
     get hasSelfTest() {
       return true;
     }
@@ -2014,7 +2226,9 @@
           return await this.click(".onetrust-close-btn-handler");
         }
         const banner = document.getElementById("onetrust-banner-sdk");
-        const isCloseOnlyNotice = banner?.classList.contains("ot-close-btn-link") && !this.elementExists("#onetrust-accept-btn-handler,#onetrust-reject-all-handler,#onetrust-pc-btn-handler,.ot-sdk-show-settings,button.js-cookie-settings");
+        const isCloseOnlyNotice = banner?.classList.contains("ot-close-btn-link") && !this.elementExists(
+          "#onetrust-accept-btn-handler,#onetrust-reject-all-handler,#onetrust-pc-btn-handler,.ot-sdk-show-settings,button.js-cookie-settings"
+        );
         if (isCloseOnlyNotice) {
           return await this.click(".onetrust-close-btn-handler");
         }
@@ -2024,13 +2238,13 @@
       } else {
         await this.click(".ot-sdk-show-settings,button.js-cookie-settings");
       }
-      await this.waitForElement("#onetrust-consent-sdk", 2000);
-      await this.wait(1000);
+      await this.waitForElement("#onetrust-consent-sdk", 2e3);
+      await this.wait(1e3);
       await this.click("#onetrust-consent-sdk input.category-switch-handler:checked,.js-editor-toggle-state:checked", true);
-      await this.wait(1000);
-      await this.waitForElement(".save-preference-btn-handler,.js-consent-save", 2000);
+      await this.wait(1e3);
+      await this.waitForElement(".save-preference-btn-handler,.js-consent-save", 2e3);
       await this.click(".save-preference-btn-handler,.js-consent-save");
-      await this.waitForVisible("#onetrust-banner-sdk", 5000, "none");
+      await this.waitForVisible("#onetrust-banner-sdk", 5e3, "none");
       return true;
     }
     async optIn() {
@@ -2039,13 +2253,16 @@
     async test() {
       return await waitFor(() => this.mainWorldEval("EVAL_ONETRUST_1"), 10, 500);
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/klaro.ts
-  class Klaro extends AutoConsentCMPBase {
-    name = "Klaro";
-    prehideSelectors = [".klaro"];
-    settingsOpen = false;
+  // lib/cmps/klaro.ts
+  var Klaro = class extends AutoConsentCMPBase {
+    constructor() {
+      super(...arguments);
+      this.name = "Klaro";
+      this.prehideSelectors = [".klaro"];
+      this.settingsOpen = false;
+    }
     get hasSelfTest() {
       return true;
     }
@@ -2077,7 +2294,10 @@
       if (await this.click(".klaro .cn-decline")) {
         return true;
       }
-      await this.click(".cm-purpose:not(.cm-toggle-all) > input:not(.half-checked,.required,.only-required),.cm-purpose:not(.cm-toggle-all) > div > input:not(.half-checked,.required,.only-required)", true);
+      await this.click(
+        ".cm-purpose:not(.cm-toggle-all) > input:not(.half-checked,.required,.only-required),.cm-purpose:not(.cm-toggle-all) > div > input:not(.half-checked,.required,.only-required)",
+        true
+      );
       return await this.click(".cm-btn-accept,.cm-button");
     }
     async optIn() {
@@ -2093,11 +2313,14 @@
     async test() {
       return await this.mainWorldEval("EVAL_KLARO_1");
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/uniconsent.ts
-  class Uniconsent extends AutoConsentCMPBase {
-    name = "Uniconsent";
+  // lib/cmps/uniconsent.ts
+  var Uniconsent = class extends AutoConsentCMPBase {
+    constructor() {
+      super(...arguments);
+      this.name = "Uniconsent";
+    }
     get prehideSelectors() {
       return [".unic", ".modal:has(.unic)"];
     }
@@ -2117,15 +2340,15 @@
       return this.elementVisible(".unic .unic-box,.unic .unic-bar,.unic .unic-modal", "any");
     }
     async optOut() {
-      await this.waitForElement(".unic button", 1000);
+      await this.waitForElement(".unic button", 1e3);
       document.querySelectorAll(".unic button").forEach((button) => {
         const text = button.textContent || "";
         if (text.includes("Manage Options") || text.includes("Optionen verwalten")) {
           button.click();
         }
       });
-      if (await this.waitForElement(".unic input[type=checkbox]", 1000)) {
-        await this.waitForElement(".unic button", 1000);
+      if (await this.waitForElement(".unic input[type=checkbox]", 1e3)) {
+        await this.waitForElement(".unic button", 1e3);
         document.querySelectorAll(".unic input[type=checkbox]").forEach((c) => {
           if (c.checked) {
             c.click();
@@ -2148,16 +2371,19 @@
       return this.waitForThenClick(".unic #unic-agree");
     }
     async test() {
-      await this.wait(1000);
+      await this.wait(1e3);
       const res = this.elementExists(".unic .unic-box,.unic .unic-bar");
       return !res;
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/conversant.ts
-  class Conversant extends AutoConsentCMPBase {
-    prehideSelectors = [".cmp-root"];
-    name = "Conversant";
+  // lib/cmps/conversant.ts
+  var Conversant = class extends AutoConsentCMPBase {
+    constructor() {
+      super(...arguments);
+      this.prehideSelectors = [".cmp-root"];
+      this.name = "Conversant";
+    }
     get hasSelfTest() {
       return true;
     }
@@ -2201,14 +2427,17 @@
     async test() {
       return document.cookie.includes("cmp-data=0");
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/tiktok.ts
-  class Tiktok extends AutoConsentCMPBase {
-    name = "tiktok.com";
-    runContext = {
-      urlPattern: "tiktok"
-    };
+  // lib/cmps/tiktok.ts
+  var Tiktok = class extends AutoConsentCMPBase {
+    constructor() {
+      super(...arguments);
+      this.name = "tiktok.com";
+      this.runContext = {
+        urlPattern: "tiktok"
+      };
+    }
     get hasSelfTest() {
       return true;
     }
@@ -2264,12 +2493,15 @@
       const value = JSON.parse(decodeURIComponent(match[1]));
       return Object.values(value).every((x) => typeof x !== "boolean" || x === false);
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/admiral.ts
-  class Admiral extends AutoConsentCMPBase {
-    name = "Admiral";
-    consentCardSelector = "div > div[class*=Card] > div[class*=Frame] > div[class*=Pills] > button[class*=Pills__StyledPill]";
+  // lib/cmps/admiral.ts
+  var Admiral = class extends AutoConsentCMPBase {
+    constructor() {
+      super(...arguments);
+      this.name = "Admiral";
+      this.consentCardSelector = "div > div[class*=Card] > div[class*=Frame] > div[class*=Pills] > button[class*=Pills__StyledPill]";
+    }
     getVrmNotice() {
       return Array.from(document.querySelectorAll("body > div")).find((element) => {
         const text = element.innerText || "";
@@ -2304,7 +2536,7 @@
       return await this.elementVisible(this.consentCardSelector, "any") || Boolean(this.getVrmNotice());
     }
     async optOut() {
-      const rejectAllSelector = "xpath///button[contains(., 'Afvis alle') or contains(., 'Reject all') or contains(., 'Odbaci sve') or contains(., 'Rechazar todo') or contains(., 'Atmesti visus') or contains(., 'Odmítnout vše') or contains(., 'Απόρριψη όλων') or contains(., 'Rejeitar tudo') or contains(., 'Tümünü reddet') or contains(., 'Отклонить все') or contains(., 'Noraidīt visu') or contains(., 'Avvisa alla') or contains(., 'Odrzuć wszystkie') or contains(., 'Alles afwijzen') or contains(., 'Отхвърляне на всички') or contains(., 'Rifiuta tutto') or contains(., 'Zavrni vse') or contains(., 'Az összes elutasítása') or contains(., 'Respingeți tot') or contains(., 'Alles ablehnen') or contains(., 'Tout rejeter') or contains(., 'Odmietnuť všetko') or contains(., 'Lükka kõik tagasi') or contains(., 'Hylkää kaikki')]";
+      const rejectAllSelector = "xpath///button[contains(., 'Afvis alle') or contains(., 'Reject all') or contains(., 'Odbaci sve') or contains(., 'Rechazar todo') or contains(., 'Atmesti visus') or contains(., 'Odm\xEDtnout v\u0161e') or contains(., '\u0391\u03C0\u03CC\u03C1\u03C1\u03B9\u03C8\u03B7 \u03CC\u03BB\u03C9\u03BD') or contains(., 'Rejeitar tudo') or contains(., 'T\xFCm\xFCn\xFC reddet') or contains(., '\u041E\u0442\u043A\u043B\u043E\u043D\u0438\u0442\u044C \u0432\u0441\u0435') or contains(., 'Noraid\u012Bt visu') or contains(., 'Avvisa alla') or contains(., 'Odrzu\u0107 wszystkie') or contains(., 'Alles afwijzen') or contains(., '\u041E\u0442\u0445\u0432\u044A\u0440\u043B\u044F\u043D\u0435 \u043D\u0430 \u0432\u0441\u0438\u0447\u043A\u0438') or contains(., 'Rifiuta tutto') or contains(., 'Zavrni vse') or contains(., 'Az \xF6sszes elutas\xEDt\xE1sa') or contains(., 'Respinge\u021Bi tot') or contains(., 'Alles ablehnen') or contains(., 'Tout rejeter') or contains(., 'Odmietnu\u0165 v\u0161etko') or contains(., 'L\xFCkka k\xF5ik tagasi') or contains(., 'Hylk\xE4\xE4 kaikki')]";
       if (await this.waitForElement(rejectAllSelector, 500)) {
         return await this.click(rejectAllSelector);
       }
@@ -2312,8 +2544,8 @@
       if (vrmCloseButton) {
         return await this.clickElement(vrmCloseButton);
       }
-      const purposesButtonSelector = "xpath///button[contains(., 'Zwecke') or contains(., 'Σκοποί') or contains(., 'Purposes') or contains(., 'Цели') or contains(., 'Eesmärgid') or contains(., 'Tikslai') or contains(., 'Svrhe') or contains(., 'Cele') or contains(., 'Účely') or contains(., 'Finalidades') or contains(., 'Mērķi') or contains(., 'Scopuri') or contains(., 'Fines') or contains(., 'Ändamål') or contains(., 'Finalités') or contains(., 'Doeleinden') or contains(., 'Tarkoitukset') or contains(., 'Scopi') or contains(., 'Amaçlar') or contains(., 'Nameni') or contains(., 'Célok') or contains(., 'Formål')]";
-      const saveAndExitSelector = "xpath///button[contains(., 'Spara & avsluta') or contains(., 'Save & exit') or contains(., 'Uložit a ukončit') or contains(., 'Enregistrer et quitter') or contains(., 'Speichern & Verlassen') or contains(., 'Tallenna ja poistu') or contains(., 'Išsaugoti ir išeiti') or contains(., 'Opslaan & afsluiten') or contains(., 'Guardar y salir') or contains(., 'Shrani in zapri') or contains(., 'Uložiť a ukončiť') or contains(., 'Kaydet ve çıkış yap') or contains(., 'Сохранить и выйти') or contains(., 'Salvesta ja välju') or contains(., 'Salva ed esci') or contains(., 'Gem & afslut') or contains(., 'Αποθήκευση και έξοδος') or contains(., 'Saglabāt un iziet') or contains(., 'Mentés és kilépés') or contains(., 'Guardar e sair') or contains(., 'Zapisz & zakończ') or contains(., 'Salvare și ieșire') or contains(., 'Spremi i izađi') or contains(., 'Запазване и изход')]";
+      const purposesButtonSelector = "xpath///button[contains(., 'Zwecke') or contains(., '\u03A3\u03BA\u03BF\u03C0\u03BF\u03AF') or contains(., 'Purposes') or contains(., '\u0426\u0435\u043B\u0438') or contains(., 'Eesm\xE4rgid') or contains(., 'Tikslai') or contains(., 'Svrhe') or contains(., 'Cele') or contains(., '\xDA\u010Dely') or contains(., 'Finalidades') or contains(., 'M\u0113r\u0137i') or contains(., 'Scopuri') or contains(., 'Fines') or contains(., '\xC4ndam\xE5l') or contains(., 'Finalit\xE9s') or contains(., 'Doeleinden') or contains(., 'Tarkoitukset') or contains(., 'Scopi') or contains(., 'Ama\xE7lar') or contains(., 'Nameni') or contains(., 'C\xE9lok') or contains(., 'Form\xE5l')]";
+      const saveAndExitSelector = "xpath///button[contains(., 'Spara & avsluta') or contains(., 'Save & exit') or contains(., 'Ulo\u017Eit a ukon\u010Dit') or contains(., 'Enregistrer et quitter') or contains(., 'Speichern & Verlassen') or contains(., 'Tallenna ja poistu') or contains(., 'I\u0161saugoti ir i\u0161eiti') or contains(., 'Opslaan & afsluiten') or contains(., 'Guardar y salir') or contains(., 'Shrani in zapri') or contains(., 'Ulo\u017Ei\u0165 a ukon\u010Di\u0165') or contains(., 'Kaydet ve \xE7\u0131k\u0131\u015F yap') or contains(., '\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0438 \u0432\u044B\u0439\u0442\u0438') or contains(., 'Salvesta ja v\xE4lju') or contains(., 'Salva ed esci') or contains(., 'Gem & afslut') or contains(., '\u0391\u03C0\u03BF\u03B8\u03AE\u03BA\u03B5\u03C5\u03C3\u03B7 \u03BA\u03B1\u03B9 \u03AD\u03BE\u03BF\u03B4\u03BF\u03C2') or contains(., 'Saglab\u0101t un iziet') or contains(., 'Ment\xE9s \xE9s kil\xE9p\xE9s') or contains(., 'Guardar e sair') or contains(., 'Zapisz & zako\u0144cz') or contains(., 'Salvare \u0219i ie\u0219ire') or contains(., 'Spremi i iza\u0111i') or contains(., '\u0417\u0430\u043F\u0430\u0437\u0432\u0430\u043D\u0435 \u0438 \u0438\u0437\u0445\u043E\u0434')]";
       if (await this.waitForThenClick(purposesButtonSelector) && await this.waitForVisible(saveAndExitSelector)) {
         const popupBody = this.elementSelector(saveAndExitSelector)[0].parentElement?.parentElement;
         const checkboxes = popupBody?.querySelectorAll("input[type=checkbox]:checked");
@@ -2323,11 +2555,13 @@
       return false;
     }
     async optIn() {
-      return await this.click("xpath///button[contains(., 'Sprejmi vse') or contains(., 'Prihvati sve') or contains(., 'Godkänn alla') or contains(., 'Prijať všetko') or contains(., 'Принять все') or contains(., 'Aceptar todo') or contains(., 'Αποδοχή όλων') or contains(., 'Zaakceptuj wszystkie') or contains(., 'Accetta tutto') or contains(., 'Priimti visus') or contains(., 'Pieņemt visu') or contains(., 'Tümünü kabul et') or contains(., 'Az összes elfogadása') or contains(., 'Accept all') or contains(., 'Приемане на всички') or contains(., 'Accepter alle') or contains(., 'Hyväksy kaikki') or contains(., 'Tout accepter') or contains(., 'Alles accepteren') or contains(., 'Aktsepteeri kõik') or contains(., 'Přijmout vše') or contains(., 'Alles akzeptieren') or contains(., 'Aceitar tudo') or contains(., 'Acceptați tot')]");
+      return await this.click(
+        "xpath///button[contains(., 'Sprejmi vse') or contains(., 'Prihvati sve') or contains(., 'Godk\xE4nn alla') or contains(., 'Prija\u0165 v\u0161etko') or contains(., '\u041F\u0440\u0438\u043D\u044F\u0442\u044C \u0432\u0441\u0435') or contains(., 'Aceptar todo') or contains(., '\u0391\u03C0\u03BF\u03B4\u03BF\u03C7\u03AE \u03CC\u03BB\u03C9\u03BD') or contains(., 'Zaakceptuj wszystkie') or contains(., 'Accetta tutto') or contains(., 'Priimti visus') or contains(., 'Pie\u0146emt visu') or contains(., 'T\xFCm\xFCn\xFC kabul et') or contains(., 'Az \xF6sszes elfogad\xE1sa') or contains(., 'Accept all') or contains(., '\u041F\u0440\u0438\u0435\u043C\u0430\u043D\u0435 \u043D\u0430 \u0432\u0441\u0438\u0447\u043A\u0438') or contains(., 'Accepter alle') or contains(., 'Hyv\xE4ksy kaikki') or contains(., 'Tout accepter') or contains(., 'Alles accepteren') or contains(., 'Aktsepteeri k\xF5ik') or contains(., 'P\u0159ijmout v\u0161e') or contains(., 'Alles akzeptieren') or contains(., 'Aceitar tudo') or contains(., 'Accepta\u021Bi tot')]"
+      );
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/cmps/all.ts
+  // lib/cmps/all.ts
   var dynamicCMPs = [
     TrustArcTop,
     Cookiebot,
@@ -2342,12 +2576,10 @@
     Admiral
   ];
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/dom-actions.ts
+  // lib/dom-actions.ts
   var DEFAULT_CLICK_RETRY_INTERVAL = 300;
   var CLICK_RETRY_POLL_INTERVAL = 50;
-
-  class DomActions {
-    autoconsentInstance;
+  var DomActions = class {
     constructor(autoconsentInstance) {
       this.autoconsentInstance = autoconsentInstance;
     }
@@ -2408,7 +2640,7 @@
     async waitForThenClick(selector, timeout = 1e4, all = false, retries = 0, retryInterval = DEFAULT_CLICK_RETRY_INTERVAL) {
       await this.waitForElement(selector, timeout);
       let clicked = await this.click(selector, all);
-      for (let attempt = 0;clicked && attempt < retries; attempt++) {
+      for (let attempt = 0; clicked && attempt < retries; attempt++) {
         const pollTimes = Math.ceil(retryInterval / CLICK_RETRY_POLL_INTERVAL);
         const isGone = await waitFor(() => !this.elementVisible(selector, "any"), pollTimes, CLICK_RETRY_POLL_INTERVAL);
         if (isGone) {
@@ -2470,7 +2702,7 @@
     }
     async createOrUpdateStyleSheet(cssText, styleSheet) {
       if (!styleSheet) {
-        styleSheet = new CSSStyleSheet;
+        styleSheet = new CSSStyleSheet();
       }
       styleSheet = await styleSheet.replace(cssText);
       return styleSheet;
@@ -2528,7 +2760,7 @@
       }
       return this.querySelectorChain(selector);
     }
-    waitForMutation(selector, timeout = 60000) {
+    waitForMutation(selector, timeout = 6e4) {
       const node = this.elementSelector(selector);
       if (node.length === 0) {
         throw new Error(`${selector} did not match any elements`);
@@ -2550,9 +2782,9 @@
         });
       });
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/encoding.ts
+  // lib/encoding.ts
   var compactedRuleSteps = [
     ["exists", "e"],
     ["visible", "v"],
@@ -2570,7 +2802,7 @@
     if (value === 0) {
       return false;
     }
-    return;
+    return void 0;
   }
   function decodeRules(encoded) {
     if (encoded.v > 1) {
@@ -2578,13 +2810,10 @@
     }
     return encoded.r.filter((r) => r[0] <= SUPPORTED_RULE_STEP_VERSION).map((rule) => new CompactedCMPRule(rule, encoded.s));
   }
-
-  class CompactedCMPRule {
-    r;
-    s;
-    intermediate = false;
-    optIn = [];
+  var CompactedCMPRule = class {
     constructor(rule, strings) {
+      this.intermediate = false;
+      this.optIn = [];
       this.r = rule;
       this.s = strings;
       if (this.r[10] && this.r[10].intermediate) {
@@ -2595,7 +2824,7 @@
       const clonedStep = { ...step };
       const decodeRuleStep = this._decodeRuleStep.bind(this);
       for (const [longKey, shortKey] of compactedRuleSteps) {
-        if (clonedStep[shortKey] !== undefined) {
+        if (clonedStep[shortKey] !== void 0) {
           clonedStep[longKey] = this.s[clonedStep[shortKey]];
           delete clonedStep[shortKey];
         }
@@ -2627,10 +2856,10 @@
       const mainFrame = this.r[4];
       const runInMainFrame = decodeNullableBoolean(Math.floor(mainFrame / 10) % 10);
       const runInSubFrame = decodeNullableBoolean(mainFrame % 10);
-      if (runInMainFrame !== undefined) {
+      if (runInMainFrame !== void 0) {
         runContext.main = runInMainFrame;
       }
-      if (runInSubFrame !== undefined) {
+      if (runInSubFrame !== void 0) {
         runContext.frame = runInSubFrame;
       }
       if (urlPattern !== "") {
@@ -2653,37 +2882,35 @@
     get test() {
       return this.r[9].map(this._decodeRuleStep.bind(this));
     }
-  }
+  };
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/lib/web.ts
+  // lib/web.ts
   function filterCMPs(rules, config) {
     return rules.filter((cmp) => {
-      return (!config.disabledCmps || !config.disabledCmps.includes(cmp.name)) && (config.enableCosmeticRules || !cmp.isCosmetic) && (config.enableGeneratedRules || !cmp.name.startsWith("auto_"));
+      return (!config.disabledCmps || !config.disabledCmps.includes(cmp.name)) && // CMP is not disabled
+      (config.enableCosmeticRules || !cmp.isCosmetic) && // CMP is not cosmetic or cosmetic rules are enabled
+      (config.enableGeneratedRules || !cmp.name.startsWith("auto_"));
     });
   }
-
-  class AutoConsent {
-    id = getRandomID();
-    rules = [];
-    #config;
-    foundCmp;
-    state = {
-      lifecycle: "loading",
-      prehideOn: false,
-      findCmpAttempts: 0,
-      detectedCmps: [],
-      detectedPopups: [],
-      heuristicPatterns: [],
-      heuristicSnippets: [],
-      selfTest: null,
-      clicks: 0,
-      startTime: 0,
-      endTime: 0
-    };
-    domActions;
-    sendContentMessage;
-    focusedElement;
+  var _config;
+  var AutoConsent = class {
     constructor(sendContentMessage, config = null, declarativeRules = null) {
+      this.id = getRandomID();
+      this.rules = [];
+      __privateAdd(this, _config);
+      this.state = {
+        lifecycle: "loading",
+        prehideOn: false,
+        findCmpAttempts: 0,
+        detectedCmps: [],
+        detectedPopups: [],
+        heuristicPatterns: [],
+        heuristicSnippets: [],
+        selfTest: null,
+        clicks: 0,
+        startTime: 0,
+        endTime: 0
+      };
       evalState.sendContentMessage = sendContentMessage;
       this.sendContentMessage = sendContentMessage;
       this.rules = [];
@@ -2705,15 +2932,15 @@
       this.domActions = new DomActions(this);
     }
     get config() {
-      if (!this.#config) {
+      if (!__privateGet(this, _config)) {
         throw new Error("AutoConsent is not initialized yet");
       }
-      return this.#config;
+      return __privateGet(this, _config);
     }
     initialize(config, declarativeRules) {
       const normalizedConfig = normalizeConfig(config);
       normalizedConfig.logs.lifecycle && console.log("autoconsent init", window.location.href);
-      this.#config = normalizedConfig;
+      __privateSet(this, _config, normalizedConfig);
       if (!normalizedConfig.enabled) {
         normalizedConfig.logs.lifecycle && console.log("autoconsent is disabled");
         return;
@@ -2761,7 +2988,7 @@
         } catch (e) {
           this.config.logs.errors && console.warn("error restoring focus", e);
         }
-        this.focusedElement = undefined;
+        this.focusedElement = void 0;
       }
     }
     addDynamicRules() {
@@ -2770,7 +2997,7 @@
       });
     }
     parseDeclarativeRules(declarativeRules) {
-      const perfEnabled = this.#config?.performanceLoggingEnabled;
+      const perfEnabled = __privateGet(this, _config)?.performanceLoggingEnabled;
       perfEnabled && performance.mark("parseDeclarativeRulesStart");
       if (declarativeRules.autoconsent) {
         declarativeRules.autoconsent.forEach((ruleset) => {
@@ -2782,7 +3009,7 @@
           const rules = decodeRules(declarativeRules.compact);
           rules.forEach(this.addDeclarativeCMP.bind(this));
         } catch (e) {
-          this.#config?.logs.errors && console.error(e);
+          __privateGet(this, _config)?.logs.errors && console.error(e);
         }
       }
       perfEnabled && performance.mark("parseDeclarativeRulesEnd");
@@ -2793,6 +3020,7 @@
         this.rules.push(new AutoConsentCMP(ruleset, this));
       }
     }
+    // start the detection process, possibly with a delay
     start() {
       scheduleWhenIdle(() => this._start());
     }
@@ -2893,9 +3121,13 @@
         }
       };
       const mutationObserver = this.domActions.waitForMutation("html");
-      mutationObserver.catch(() => {});
+      mutationObserver.catch(() => {
+      });
       for (const [stageName, ruleGroup] of rulesPriorityStages) {
-        logsConfig.lifecycle && ruleGroup.length > 0 && console.log(`Trying ${stageName} rules`, ruleGroup.map((r) => r.name));
+        logsConfig.lifecycle && ruleGroup.length > 0 && console.log(
+          `Trying ${stageName} rules`,
+          ruleGroup.map((r) => r.name)
+        );
         this.config.performanceLoggingEnabled && performance.mark(`findCmpStage_${stageName}`);
         await Promise.all(ruleGroup.map(runDetectCmp));
         this.config.performanceLoggingEnabled && performance.mark(`findCmpStageEnd_${stageName}`);
@@ -2906,13 +3138,13 @@
       }
       this.detectHeuristics();
       if (foundCMPs.length === 0 && retries > 0) {
-        const waitFor = [this.domActions.wait(500)];
+        const waitFor2 = [this.domActions.wait(500)];
         const heuristicSkipped = heuristicEnabled && heuristicRules.length === 0;
         if (this.state.findCmpAttempts > 1 && !heuristicSkipped) {
-          waitFor.push(mutationObserver);
+          waitFor2.push(mutationObserver);
         }
         try {
-          await Promise.all(waitFor);
+          await Promise.all(waitFor2);
         } catch (e) {
           return [];
         }
@@ -2923,15 +3155,18 @@
     detectHeuristics() {
       if (this.config.enableHeuristicDetection) {
         this.config.performanceLoggingEnabled && performance.mark("detectHeuristicsStart");
-        const { patterns, snippets } = checkHeuristicPatterns(document.documentElement?.innerText || "");
+        const { patterns, snippets: snippets2 } = checkHeuristicPatterns(document.documentElement?.innerText || "");
         if (patterns.length > 0 && (patterns.length !== this.state.heuristicPatterns.length || this.state.heuristicPatterns.some((p, i) => p !== patterns[i]))) {
-          this.config.logs.lifecycle && console.log("Heuristic patterns found", patterns, snippets);
-          this.updateState({ heuristicPatterns: patterns, heuristicSnippets: snippets });
+          this.config.logs.lifecycle && console.log("Heuristic patterns found", patterns, snippets2);
+          this.updateState({ heuristicPatterns: patterns, heuristicSnippets: snippets2 });
         }
         this.config.performanceLoggingEnabled && performance.mark("detectHeuristicsEnd");
         this.config.performanceLoggingEnabled && performance.measure("detectHeuristics", "detectHeuristicsStart", "detectHeuristicsEnd");
       }
     }
+    /**
+     * Detect if a CMP has a popup open. Fullfils with the CMP if a popup is open, otherwise rejects.
+     */
     async detectPopup(cmp) {
       const isOpen = await this.waitForPopup(cmp).catch((error) => {
         this.config.logs.errors && console.warn(`error waiting for a popup for ${cmp.name}`, error);
@@ -2948,12 +3183,16 @@
       }
       throw new Error("Popup is not shown");
     }
+    /**
+     * Detect if any of the CMPs has a popup open. Returns a list of CMPs with open popups.
+     */
     async detectPopups(cmps, onFirstPopupAppears) {
       const tasks = cmps.map((cmp) => this.detectPopup(cmp));
       await Promise.any(tasks).then((cmp) => {
         this.detectHeuristics();
         onFirstPopupAppears(cmp);
-      }).catch(() => {});
+      }).catch(() => {
+      });
       const results = await Promise.allSettled(tasks);
       const popups = [];
       for (const result of results) {
@@ -3003,7 +3242,9 @@
       });
       if (optOutResult && this.foundCmp && !this.foundCmp.isIntermediate) {
         this.state.endTime = Date.now();
-        logsConfig.lifecycle && console.log(`${this.foundCmp.name}: done in ${this.state.endTime - this.state.startTime}ms with ${this.state.clicks} clicks`);
+        logsConfig.lifecycle && console.log(
+          `${this.foundCmp.name}: done in ${this.state.endTime - this.state.startTime}ms with ${this.state.clicks} clicks`
+        );
         this.sendContentMessage({
           type: "autoconsentDone",
           cmp: this.foundCmp?.name,
@@ -3040,11 +3281,14 @@
         cmp: this.foundCmp ? this.foundCmp.name : "none",
         result: optInResult,
         scheduleSelfTest: false,
+        // self-tests are only for opt-out at the moment
         url: location.href
       });
       if (optInResult && this.foundCmp && !this.foundCmp.isIntermediate) {
         this.state.endTime = Date.now();
-        logsConfig.lifecycle && console.log(`${this.foundCmp.name}: done in ${this.state.endTime - this.state.startTime}ms with ${this.state.clicks} clicks`);
+        logsConfig.lifecycle && console.log(
+          `${this.foundCmp.name}: done in ${this.state.endTime - this.state.startTime}ms with ${this.state.clicks} clicks`
+        );
         this.sendContentMessage({
           type: "autoconsentDone",
           cmp: this.foundCmp.name,
@@ -3085,7 +3329,8 @@
       let mutationObserver = null;
       if (this.config.enablePopupMutationObserver) {
         mutationObserver = this.domActions.waitForMutation("html", 1e4);
-        mutationObserver.catch(() => {});
+        mutationObserver.catch(() => {
+        });
       }
       const isOpen = await cmp.detectPopup().catch((e) => {
         logsConfig.errors && console.warn(`error detecting popup for ${cmp.name}`, e);
@@ -3118,7 +3363,7 @@
           logsConfig.lifecycle && console.log("Process is taking too long, unhiding elements");
           this.undoPrehide();
         }
-      }, this.config.prehideTimeout || 2000);
+      }, this.config.prehideTimeout || 2e3);
       return this.domActions.prehide(selectors.join(","));
     }
     undoPrehide() {
@@ -3136,7 +3381,7 @@
       });
     }
     async receiveMessageCallback(message) {
-      const logsConfig = this.#config?.logs;
+      const logsConfig = __privateGet(this, _config)?.logs;
       if (logsConfig?.messages) {
         console.log("received from background", message, window.location.href);
       }
@@ -3172,8 +3417,9 @@
         parseDeclarativeRules: getRoundedPerformanceEntries("parseDeclarativeRules")
       };
     }
-  }
+  };
+  _config = new WeakMap();
 
-  // ../../../tmp/tmp.rRdQebu2IZ/autoconsent/cookie-pookie/content-entry.js
+  // cookie-pookie/content-entry.js
   globalThis.CookiePookieAutoConsent = AutoConsent;
 })();
