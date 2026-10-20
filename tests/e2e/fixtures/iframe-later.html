@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Banner in an iframe that appears later</title>
+    <style>
+      iframe {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        border: 0;
+        border-top: 1px solid #ccc;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>A magazine</h1>
+    <p>Some page content.</p>
+    <!-- The consent frame starts hidden (?start=hidden) or 1×1 pixel (?start=tiny), and is
+         shown full width a second later. Cookie Pookie only starts its engine in frames once
+         they're big enough, so this checks it notices both. -->
+    <iframe id="consent-frame" src="iframe-banner.html?later" title="Consent"></iframe>
+    <script>
+      const frame = document.getElementById("consent-frame");
+      const hidden = new URLSearchParams(location.search).get("start") === "hidden";
+      if (hidden) frame.style.display = "none";
+      else Object.assign(frame.style, { width: "1px", height: "1px" });
+      setTimeout(() => {
+        Object.assign(frame.style, { display: "block", width: "100%", height: "160px" });
+      }, 1000);
+    </script>
+  </body>
+</html>

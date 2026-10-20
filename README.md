@@ -75,6 +75,7 @@ Results for 0.4.0 on Firefox 158, Linux, 40 rounds per page (median extra time w
 
 - On ordinary pages the add-on costs well under 10 ms.
 - Each iframe costs about 7–10 ms: roughly 1 ms for any content script, 2–3 ms to load autoconsent, and 4 ms to start the engine. It adds up on pages with many frames. Switching off heuristics or the popup observer doesn't change it, and filtering rules for a frame takes 0.1 ms; it's the engine starting in each frame. On real sites the frames also wait for the network, which hides part of it.
+- Since 0.4.1, the engine doesn't start in hidden or tiny frames (tracking pixels, ad syncing) until they're shown at 100×40 pixels or more (`src/content/content.js`). On a page with 4 visible and 16 hidden iframes, that cut the add-on's extra load time from about +190 ms to +107 ms. Visible frames are unchanged.
 - Known banners are hidden as soon as the page starts and rejected about 0.6 s later, so the banner doesn't flash while the engine works.
 
 ## Translations

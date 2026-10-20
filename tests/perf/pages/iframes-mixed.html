@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A page with typical iframes</title>
+  </head>
+  <body>
+    <!-- Closer to a real site: 4 visible frames (ads, a video embed) and 16 hidden or 1×1
+         frames (tracking pixels, ad syncing). Cookie Pookie doesn't start its engine in the
+         hidden ones unless they're shown. -->
+    <h1>A page with 4 visible and 16 hidden iframes</h1>
+    <script>
+      for (let i = 0; i < 20; i++) {
+        const frame = document.createElement("iframe");
+        frame.src = `plain.html?frame=${i}`;
+        if (i < 4) Object.assign(frame, { width: 300, height: 250 });
+        else if (i % 2) Object.assign(frame, { width: 1, height: 1 });
+        else frame.style.display = "none";
+        document.body.append(frame);
+      }
+    </script>
+  </body>
+</html>

@@ -185,6 +185,15 @@ try {
     assert.equal(await handledBy(frame), "piano.io");
   });
 
+  for (const start of ["hidden", "tiny"]) {
+    await test(`rejects a banner in an iframe that starts ${start} and is shown later`, async (page) => {
+      await page.goto(`${base}/iframe-later.html?start=${start}`);
+      const frame = await frameEndingWith(page, "/iframe-banner.html?later");
+      assert.equal(await clicksIn(frame, 15000), "reject");
+      assert.equal(await handledBy(frame), "piano.io");
+    });
+  }
+
   await test("never clicks accept when there is no reject option", async (page) => {
     await page.goto(`${base}/accept-only.html`);
     const clicked = await clicksIn(page.mainFrame(), 8000);

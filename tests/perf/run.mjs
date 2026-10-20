@@ -37,6 +37,7 @@ const allPages = [
   ["Article, no banner", "plain.html"],
   ["20 iframes, same site", "iframes.html"],
   ["20 iframes from other sites", "iframes-cross-site.html"],
+  ["4 visible and 16 hidden iframes", "iframes-mixed.html"],
   ["Large page that keeps changing", "busy.html", "updateMs"],
   ["OneTrust banner", "onetrust.html", "clickedAt"]
 ];
