@@ -2,6 +2,11 @@
 
 Each `## <version>` section becomes that version's release notes on addons.mozilla.org and GitHub, so write it for users. `scripts/release.sh` won't release a version without one.
 
+## 0.4.1
+
+- Faster on pages with many hidden iframes, such as tracking pixels
+- Now requires Firefox 140 or later (Firefox for Android 142 or later)
+
 ## 0.4.0
 
 - Now available in German, French, Dutch, Spanish and Italian
