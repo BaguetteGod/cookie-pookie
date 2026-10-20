@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cookie Pookie",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Automatically rejects cookie consent banners so you never have to click them again.",
   "icons": {
     "48": "icons/icon.svg",
@@ -11,17 +11,34 @@
     "gecko": {
       "id": "cookie-pookie@example.com",
       "strict_min_version": "128.0"
+    },
+    "gecko_android": {
+      "strict_min_version": "128.0"
     }
   },
-  "permissions": ["storage", "tabs", "scripting"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
-    "scripts": ["vendor/autoconsent/background-lib.js", "src/background.js"]
+    "scripts": [
+      "vendor/autoconsent/background-lib.js",
+      "src/background.js"
+    ]
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["vendor/autoconsent/content-lib.js", "src/content/content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "vendor/autoconsent/content-lib.js",
+        "src/content/content.js"
+      ],
       "run_at": "document_start",
       "all_frames": true
     }

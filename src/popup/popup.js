@@ -1,4 +1,5 @@
 /* Cookie Pookie — toolbar popup. */
+/* global buildReportUrl */
 
 const $ = (id) => document.getElementById(id);
 
@@ -9,7 +10,33 @@ function describe(results) {
     .join(" ");
 }
 
+async function engineVersion() {
+  try {
+    const text = await (await fetch(browser.runtime.getURL("vendor/autoconsent/VERSION"))).text();
+    return text.split("\n")[0].trim() || "autoconsent (unknown version)";
+  } catch {
+    return "autoconsent (unknown version)";
+  }
+}
+
+const ALL_SITES = { origins: ["<all_urls>"] };
+
+// Firefox can leave host access ungranted (often on Android, or if the user
+// revoked it). Without it the content scripts never run, so ask for it here.
+async function checkPermission() {
+  try {
+    $("permission-warning").hidden = await browser.permissions.contains(ALL_SITES);
+  } catch {
+    // If the check itself fails, don't block the rest of the popup.
+  }
+}
+
 async function init() {
+  await checkPermission();
+  $("grant").addEventListener("click", async () => {
+    if (await browser.permissions.request(ALL_SITES)) $("permission-warning").hidden = true;
+  });
+
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   let host = "";
   try {
@@ -28,6 +55,7 @@ async function init() {
   $("site").disabled = !host || !settings.enabled;
   $("page-status").textContent = describe(results);
   $("total").textContent = settings.totalHandled;
+  $("report").disabled = !host;
 
   $("enabled").addEventListener("change", async (e) => {
     await browser.storage.local.set({ enabled: e.target.checked });
@@ -40,6 +68,18 @@ async function init() {
     if (e.target.checked) next.delete(host);
     else next.add(host);
     await browser.storage.local.set({ disabledSites: [...next] });
+  });
+
+  $("report").addEventListener("click", async () => {
+    const url = buildReportUrl({
+      pageUrl: tab.url,
+      results,
+      addonVersion: browser.runtime.getManifest().version,
+      engineVersion: await engineVersion(),
+      userAgent: navigator.userAgent
+    });
+    await browser.tabs.create({ url });
+    window.close();
   });
 }
 

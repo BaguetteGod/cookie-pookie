@@ -51,10 +51,16 @@ function loadRules() {
 // Banners handled per tab since its last page load: [{ cmp, cosmetic }].
 const tabResults = new Map();
 
+// Badges aren't shown on every platform (e.g. some Firefox for Android versions),
+// so failures here are ignored rather than breaking the counting.
 function setBadge(tabId) {
   const count = (tabResults.get(tabId) || []).length;
-  browser.action.setBadgeText({ tabId, text: count ? String(count) : "" });
-  browser.action.setBadgeBackgroundColor({ tabId, color: "#8a5a2b" });
+  try {
+    browser.action.setBadgeText({ tabId, text: count ? String(count) : "" })?.catch?.(() => {});
+    browser.action.setBadgeBackgroundColor({ tabId, color: "#8a5a2b" })?.catch?.(() => {});
+  } catch {
+    // not supported here
+  }
 }
 
 async function handleInit(sender) {

@@ -17,14 +17,21 @@ Code layout:
 | --- | --- |
 | `src/content/content.js` | Starts the engine in every frame and relays its messages. |
 | `src/background.js` | Gives each frame its rules and settings, runs the engine's main-world snippets, applies the on/off switches and counts handled banners. |
-| `src/popup/` | Toolbar popup: global switch, per-site switch, what happened on this page. |
+| `src/popup/` | Toolbar popup: global switch, per-site switch, what happened on this page, "Report a broken site", and a prompt when site access is missing. |
+| `src/report.js` | Builds the pre-filled GitHub issue link for broken-site reports. |
 | `vendor/autoconsent/` | Built copy of autoconsent and its rules (MPL-2.0). Don't edit by hand. |
 | `scripts/build-autoconsent.sh` | Rebuilds `vendor/autoconsent/` from an autoconsent release. |
-| `tests/` | Node tests for the background logic, using a fake `browser` API. |
+| `tests/*.test.mjs` | Unit tests for the background logic and report link, using a fake `browser` API. |
+| `tests/e2e/` | Real-Firefox tests: test pages with sample banners, run with Puppeteer. |
+| `.github/workflows/` | `test.yml` runs all tests and the linter on every push and PR; `update-autoconsent.yml` updates the rules weekly. |
 
 The per-site switch is decided by the tab's top-level site, so it also covers consent banners loaded in iframes.
 
-Requires Firefox 128 or later.
+Requires Firefox 128 or later, on desktop or Android. On Android the popup opens as a full page; if Firefox hasn't granted access to all websites, the popup shows a button to allow it.
+
+### Reporting broken sites
+
+The popup's **Report a broken site** button opens a pre-filled issue in this repository with the page address (without query string or fragment, which can hold personal data), what Cookie Pookie handled, and version numbers. While the repository is private, only people with access to it can file reports; change `COOKIE_POOKIE_ISSUES_URL` in `src/report.js` if reports should go elsewhere.
 
 ## Develop
 
@@ -39,14 +46,21 @@ With [web-ext](https://github.com/mozilla/web-ext):
 ```sh
 npm install
 npm start      # launches Firefox with the add-on loaded and auto-reloading
-npm test       # background logic tests (plain Node, no install needed)
+npm test       # unit tests (plain Node, no install needed)
 npm run lint   # Mozilla's add-on linter
+
+npx puppeteer browsers install firefox
+npm run test:e2e   # real Firefox with the add-on, against tests/e2e/fixtures
 npm run build  # zip for addons.mozilla.org, in web-ext-artifacts/
 ```
 
 ## Updating the rules
 
-autoconsent releases often, mostly with new rules. To update:
+autoconsent releases often, mostly with new rules. Every Monday, the **Update autoconsent rules** workflow checks for a newer release, rebuilds `vendor/autoconsent/`, runs all tests including real Firefox, and opens a pull request for you to merge. You can also start it from the Actions tab.
+
+For it to open pull requests, enable **Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests**. Pull requests opened by the workflow don't trigger the Test workflow on their own (a GitHub safeguard), which is why the update workflow runs the full test suite itself before opening one.
+
+To update by hand:
 
 ```sh
 scripts/build-autoconsent.sh            # rebuild the pinned version

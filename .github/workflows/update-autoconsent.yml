@@ -1,0 +1,89 @@
+name: Update autoconsent rules
+
+# Weekly: if DuckDuckGo published a newer autoconsent release, rebuild
+# vendor/autoconsent, run all tests (including real Firefox), and open a PR.
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-autoconsent
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PUPPETEER_CHROME_SKIP_DOWNLOAD: "true"
+      PUPPETEER_CHROME_HEADLESS_SHELL_SKIP_DOWNLOAD: "true"
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Find newest release
+        id: version
+        run: |
+          latest=$(git ls-remote --tags --refs https://github.com/duckduckgo/autoconsent 'v*' \
+            | sed 's#.*refs/tags/v##' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          current=$(awk '/^autoconsent /{print $2}' vendor/autoconsent/VERSION)
+          branch="autoconsent-$latest"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          if [ -z "$latest" ] || [ "$latest" = "$current" ]; then
+            echo "Already on autoconsent $current."
+            echo "update=false" >> "$GITHUB_OUTPUT"
+          elif git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            echo "A pull request branch for $latest already exists."
+            echo "update=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Updating autoconsent $current -> $latest."
+            echo "update=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.version.outputs.update == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - if: steps.version.outputs.update == 'true'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Rebuild vendor/autoconsent
+        if: steps.version.outputs.update == 'true'
+        run: scripts/build-autoconsent.sh "${{ steps.version.outputs.latest }}"
+
+      - name: Test
+        if: steps.version.outputs.update == 'true'
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+          npm run lint
+          npx puppeteer browsers install firefox
+          npm run test:e2e
+
+      - name: Open pull request
+        if: steps.version.outputs.update == 'true'
+        env:
+          LATEST: ${{ steps.version.outputs.latest }}
+          CURRENT: ${{ steps.version.outputs.current }}
+          BRANCH: ${{ steps.version.outputs.branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add vendor/autoconsent
+          git commit -m "Update autoconsent rules to $LATEST"
+          git push origin "$BRANCH"
+          printf '%s\n\n%s\n\n%s\n' \
+            "Rebuilt \`vendor/autoconsent\` from autoconsent v$LATEST (was v$CURRENT)." \
+            "Unit tests, Mozilla's linter and the real-Firefox tests passed in the workflow that opened this PR." \
+            "Changes: https://github.com/duckduckgo/autoconsent/compare/v$CURRENT...v$LATEST" > pr-body.md
+          gh pr create --base main --head "$BRANCH" \
+            --title "Update autoconsent rules to $LATEST" --body-file pr-body.md
