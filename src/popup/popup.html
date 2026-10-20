@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cookie Pookie</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="../../icons/icon.svg" alt="" width="28" height="28" />
+      <h1>Cookie Pookie</h1>
+    </header>
+
+    <label class="row">
+      <span>Reject cookie banners</span>
+      <input type="checkbox" id="enabled" />
+    </label>
+
+    <label class="row">
+      <span>On <strong id="host">this site</strong></span>
+      <input type="checkbox" id="site" />
+    </label>
+
+    <p class="stats">
+      <span id="tab-count">0</span> rejected on this page ·
+      <span id="total">0</span> in total
+    </p>
+
+    <p class="note">Changes apply when you reload the page.</p>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- A cookie with a bite taken out -->
+  <path d="M32 4a28 28 0 1 0 28 28 8 8 0 0 1-9-9 8 8 0 0 1-9-9 8 8 0 0 1-10-10z" fill="#d49a5c"/>
+  <path d="M32 4a28 28 0 1 0 28 28 8 8 0 0 1-9-9 8 8 0 0 1-9-9 8 8 0 0 1-10-10z" fill="none" stroke="#8a5a2b" stroke-width="2.5"/>
+  <circle cx="22" cy="24" r="3.5" fill="#5a3a1c"/>
+  <circle cx="18" cy="40" r="3" fill="#5a3a1c"/>
+  <circle cx="32" cy="35" r="3.5" fill="#5a3a1c"/>
+  <circle cx="42" cy="46" r="3" fill="#5a3a1c"/>
+  <circle cx="28" cy="50" r="2.5" fill="#5a3a1c"/>
+  <!-- A small "no" slash: cookies rejected -->
+  <circle cx="50" cy="50" r="11" fill="#fffaf3" stroke="#b23b2e" stroke-width="3"/>
+  <path d="M42.5 57.5l15-15" stroke="#b23b2e" stroke-width="3" stroke-linecap="round"/>
+</svg>
