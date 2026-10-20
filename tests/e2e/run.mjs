@@ -47,31 +47,62 @@ async function clicksIn(frame, timeoutMs) {
 const server = await startServer();
 const base = `http://127.0.0.1:${server.address().port}`;
 
-const browser = await puppeteer.launch({
-  browser: "firefox",
-  headless: process.env.HEADLESS !== "false",
-  extraPrefsFirefox: {
-    // Grant the add-on's host permissions without a prompt (the default on desktop).
-    "extensions.originControls.grantByDefault": true
+const browser = await launch();
+
+async function launch() {
+  try {
+    return await puppeteer.launch({
+      browser: "firefox",
+      headless: process.env.HEADLESS !== "false",
+      extraPrefsFirefox: {
+        // Grant the add-on's host permissions without a prompt (the default on desktop).
+        "extensions.originControls.grantByDefault": true
+      }
+    });
+  } catch (error) {
+    annotate("e2e: could not start Firefox", error.stack || error.message);
+    throw error;
   }
+}
+
+// On GitHub Actions, also report failures as annotations so they show up on the PR.
+function annotate(title, message) {
+  if (!process.env.GITHUB_ACTIONS) return;
+  const esc = (t) => String(t).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+  console.log(`::error title=${esc(title).replace(/[:,]/g, " ")}::${esc(message)}`);
+}
+
+process.on("unhandledRejection", (error) => {
+  annotate("e2e run crashed", error && error.stack ? error.stack : error);
+  console.error(error);
+  process.exit(1);
 });
 
 let failures = 0;
+const passed = [];
 async function test(name, fn) {
   const page = await browser.newPage();
   try {
     await fn(page);
     console.log(`ok - ${name}`);
+    passed.push(name);
   } catch (error) {
     failures++;
     console.log(`not ok - ${name}\n  ${String(error.message).replace(/\n/g, "\n  ")}`);
+    annotate(`e2e: ${name}`, error.message);
   } finally {
     await page.close();
   }
 }
 
 try {
-  const id = await browser.installExtension(root);
+  let id;
+  try {
+    id = await browser.installExtension(root);
+  } catch (error) {
+    annotate("e2e: could not install the add-on", error.stack || error.message);
+    throw error;
+  }
   console.log(`# installed Cookie Pookie as ${id}`);
 
   await test("rejects a OneTrust banner", async (page) => {
@@ -104,6 +135,10 @@ try {
 } finally {
   await browser.close();
   server.close();
+}
+
+if (process.env.GITHUB_ACTIONS && passed.length) {
+  console.log(`::notice title=e2e passed::${passed.join("%0A")}`);
 }
 
 if (failures) {
