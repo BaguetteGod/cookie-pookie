@@ -1,0 +1,98 @@
+name: Release
+
+# Runs when scripts/release.sh pushes a version tag: checks and tests the
+# release, submits it to addons.mozilla.org for review with its source code,
+# and publishes a GitHub release with the same files.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write # to create the GitHub release
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PUPPETEER_CHROME_SKIP_DOWNLOAD: "true"
+      PUPPETEER_CHROME_HEADLESS_SHELL_SKIP_DOWNLOAD: "true"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Check the tag matches the version
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          manifest=$(node -p 'require("./manifest.json").version')
+          package=$(node -p 'require("./package.json").version')
+          if [ "$manifest" != "$version" ] || [ "$package" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match manifest.json ($manifest) and package.json ($package)."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Write AMO metadata and release notes
+        run: |
+          mkdir -p web-ext-artifacts
+          node scripts/amo-metadata.mjs "${{ steps.version.outputs.version }}" > web-ext-artifacts/amo-metadata.json
+          node scripts/amo-metadata.mjs "${{ steps.version.outputs.version }}" --notes > web-ext-artifacts/release-notes.md
+
+      - name: Install dev tools
+        run: npm ci --no-audit --no-fund
+
+      # Reviewers rebuild vendor/autoconsent/ from the source zip; make sure they'll get the same files.
+      - name: Check vendor/autoconsent is reproducible
+        run: |
+          scripts/build-autoconsent.sh
+          git diff --exit-code -- vendor/autoconsent
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Mozilla add-on linter
+        run: npm run lint
+
+      - name: Install Firefox
+        run: npx puppeteer browsers install firefox
+
+      - name: End-to-end tests in Firefox
+        run: npm run test:e2e
+
+      - name: Build
+        run: |
+          npm run build
+          git archive --format=zip -o "web-ext-artifacts/cookie_pookie-${{ steps.version.outputs.version }}-source.zip" "$GITHUB_REF_NAME"
+          ls -l web-ext-artifacts
+
+      - name: Submit to addons.mozilla.org
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          if [ -z "$WEB_EXT_API_KEY" ] || [ -z "$WEB_EXT_API_SECRET" ]; then
+            echo "::error::Add the AMO_JWT_ISSUER and AMO_JWT_SECRET repository secrets (see README, Releasing)."
+            exit 1
+          fi
+          # Submits the version for review and returns; Mozilla emails when it's approved.
+          npx web-ext sign --channel=listed --approval-timeout=0 \
+            --amo-metadata=web-ext-artifacts/amo-metadata.json \
+            --upload-source-code="web-ext-artifacts/cookie_pookie-${{ steps.version.outputs.version }}-source.zip"
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --title "Cookie Pookie $VERSION" \
+            --notes-file web-ext-artifacts/release-notes.md \
+            "web-ext-artifacts/cookie_pookie-$VERSION.zip" \
+            "web-ext-artifacts/cookie_pookie-$VERSION-source.zip"

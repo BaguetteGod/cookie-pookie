@@ -4,10 +4,13 @@ export default {
     "package.json",
     "package-lock.json",
     "README.md",
+    "CHANGELOG.md",
     "node_modules",
     "scripts",
     "tests",
     "web-ext-config.mjs",
-    ".gitignore"
+    ".gitignore",
+    // web-ext sign builds in a temporary folder, so it doesn't skip this one by itself
+    "web-ext-artifacts"
   ]
 };

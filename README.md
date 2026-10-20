@@ -21,9 +21,10 @@ Code layout:
 | `src/report.js` | Builds the pre-filled GitHub issue link for broken-site reports. |
 | `vendor/autoconsent/` | Built copy of autoconsent and its rules (MPL-2.0). Don't edit by hand. |
 | `scripts/build-autoconsent.sh` | Rebuilds `vendor/autoconsent/` from an autoconsent release. |
+| `scripts/release.sh`, `scripts/amo-metadata.mjs` | Start a release, and write its addons.mozilla.org notes from `CHANGELOG.md`. |
 | `tests/*.test.mjs` | Unit tests for the background logic and report link, using a fake `browser` API. |
 | `tests/e2e/` | Real-Firefox tests: test pages with sample banners, run with Puppeteer. |
-| `.github/workflows/` | `test.yml` runs all tests and the linter on every push and PR; `update-autoconsent.yml` updates the rules weekly. |
+| `.github/workflows/` | `test.yml` runs all tests and the linter on every push and PR; `update-autoconsent.yml` updates the rules weekly; `release.yml` submits tagged releases to addons.mozilla.org. |
 
 The per-site switch is decided by the tab's top-level site, so it also covers consent banners loaded in iframes.
 
@@ -71,11 +72,23 @@ npm test
 
 The script needs Node with npm. It builds from DuckDuckGo's published `@duckduckgo/autoconsent` npm package: the rules are copied as published, and the JavaScript is bundled from the package's sources with the esbuild version pinned in `package-lock.json`. The same version always gives byte-identical files, so anyone can check `vendor/autoconsent/` by rebuilding it. `vendor/autoconsent/VERSION` records the release, the package's integrity hash and the esbuild version.
 
-## Before publishing
+## Releasing
 
-- The add-on ID `cookie-pookie@baguettegod` in `manifest.json` is permanent once published; never change it.
+Releases go to [addons.mozilla.org](https://addons.mozilla.org) through the **Release** workflow:
+
+1. Add a `## 0.4.0` section to [CHANGELOG.md](CHANGELOG.md) with the release notes, written for users, and commit it.
+2. Run `scripts/release.sh 0.4.0`. It checks that `master` is clean and in sync, bumps the version in `manifest.json`, `package.json` and `package-lock.json`, commits, tags `v0.4.0` and pushes.
+3. The tag starts the Release workflow. It checks that `vendor/autoconsent/` rebuilds byte for byte, runs all tests and the linter, submits the version to addons.mozilla.org with its source code, release notes and reviewer notes (written by `scripts/amo-metadata.mjs`), and publishes a GitHub release with the same files. Mozilla emails you when the review is done.
+
+A merged autoconsent update only reaches users once it's released, so release after merging one.
+
+One-time setup: create API credentials at [addons.mozilla.org/developers/addon/api/key](https://addons.mozilla.org/developers/addon/api/key/), then add them as repository secrets under **Settings → Secrets and variables → Actions**: the JWT issuer as `AMO_JWT_ISSUER` and the JWT secret as `AMO_JWT_SECRET`.
+
+Things to keep in mind:
+
+- The add-on ID `cookie-pookie@baguettegod` in `manifest.json` is permanent; never change it.
+- addons.mozilla.org never accepts the same version number twice, even for a version that was disabled or rejected.
 - `data_collection_permissions` in `manifest.json` declares that the add-on collects no data. Update it if that ever changes.
-- addons.mozilla.org asks for the source of bundled code. Upload `git archive` of the release commit and tell reviewers to run `npm ci && scripts/build-autoconsent.sh`, which reproduces `vendor/autoconsent/` byte for byte.
 - `vendor/autoconsent/` is under the Mozilla Public License 2.0, like the rest of Cookie Pookie; keep its `LICENSE` file and headers.
 
 ## License
