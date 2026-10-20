@@ -6,7 +6,7 @@
   "description": "Firefox add-on that automatically rejects cookie consent banners.",
   "scripts": {
     "start": "web-ext run --source-dir . --browser-console",
-    "test": "node tests/background.test.mjs && node tests/report.test.mjs && node tests/locales.test.mjs",
+    "test": "node tests/background.test.mjs && node tests/report.test.mjs && node tests/locales.test.mjs && node scripts/amo-listing.mjs --dry-run > /dev/null",
     "test:e2e": "node tests/e2e/run.mjs",
     "lint": "web-ext lint --source-dir .",
     "build": "web-ext build --source-dir . --overwrite-dest",

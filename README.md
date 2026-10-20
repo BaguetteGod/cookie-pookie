@@ -23,9 +23,10 @@ Code layout:
 | `vendor/autoconsent/` | Built copy of autoconsent and its rules (MPL-2.0). Don't edit by hand. |
 | `scripts/build-autoconsent.sh` | Rebuilds `vendor/autoconsent/` from an autoconsent release. |
 | `scripts/release.sh`, `scripts/amo-metadata.mjs` | Start a release, and write its addons.mozilla.org notes from `CHANGELOG.md`. |
+| `docs/amo-listing.md`, `scripts/amo-listing.mjs` | The addons.mozilla.org listing text in every language, and the script that sends it there. |
 | `tests/*.test.mjs` | Unit tests for the background logic, the report link and the translations. |
 | `tests/e2e/` | Real-Firefox tests: test pages with sample banners, run with Puppeteer. |
-| `.github/workflows/` | `test.yml` runs all tests and the linter on every push and PR; `update-autoconsent.yml` updates the rules weekly; `release.yml` submits tagged releases to addons.mozilla.org. |
+| `.github/workflows/` | `test.yml` runs all tests and the linter on every push and PR; `update-autoconsent.yml` updates the rules weekly; `release.yml` submits tagged releases to addons.mozilla.org; `listing.yml` updates the listing text there when `docs/amo-listing.md` changes. |
 
 The per-site switch is decided by the tab's top-level site, so it also covers consent banners loaded in iframes.
 
@@ -92,6 +93,8 @@ Releases go to [addons.mozilla.org](https://addons.mozilla.org) through the **Re
 3. The tag starts the Release workflow. It checks that `vendor/autoconsent/` rebuilds byte for byte, runs all tests and the linter, submits the version to addons.mozilla.org with its source code, release notes and reviewer notes (written by `scripts/amo-metadata.mjs`), and publishes a GitHub release with the same files. Mozilla emails you when the review is done.
 
 A merged autoconsent update only reaches users once it's released, so release after merging one.
+
+The listing's summary, description and privacy policy live in [docs/amo-listing.md](docs/amo-listing.md), in every language. Pushing a change to it runs the **Update AMO listing** workflow, which sends it to addons.mozilla.org; check the result first with `node scripts/amo-listing.mjs --dry-run`. Screenshots and categories are still edited on the website.
 
 One-time setup: create API credentials at [addons.mozilla.org/developers/addon/api/key](https://addons.mozilla.org/developers/addon/api/key/), then add them as repository secrets under **Settings → Secrets and variables → Actions**: the JWT issuer as `AMO_JWT_ISSUER` and the JWT secret as `AMO_JWT_SECRET`.
 

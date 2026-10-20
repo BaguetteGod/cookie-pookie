@@ -1,6 +1,6 @@
 # addons.mozilla.org listing
 
-The text for each field of the listing, per language. On the listing page, pick a language from **Localize for** at the top right, then paste that language's fields. The name stays "Cookie Pookie" everywhere. Summaries must be 250 characters or fewer.
+The text for each field of the listing, per language. When this file changes on `master`, the **Update AMO listing** workflow sends it to addons.mozilla.org with `scripts/amo-listing.mjs`; you can also start that workflow by hand from the Actions tab. Each heading ends with AMO's locale code in brackets, and each field's text goes in a `text` block under its bold label. The name stays "Cookie Pookie" everywhere. Summaries must be 250 characters or fewer.
 
 The button names in the descriptions match the add-on's translated popup, which ships from version 0.4.0.
 
@@ -116,7 +116,7 @@ Cookie Pookie verzamelt geen gegevens. Geen statistieken, geen tracking, geen se
 Cookie Pookie verzamelt, bewaart en verstuurt geen persoonsgegevens. De instellingen (aan/uit, websites waarop het uitstaat) worden alleen in je browser opgeslagen. De knop ‘Website met problemen melden’ opent in je browser een GitHub-issuepagina met het adres van de website (zonder parameters of fragment) en versienummers. Er wordt niets verstuurd tenzij je dat issue zelf indient.
 ```
 
-## Español (es)
+## Español (es-ES)
 
 **Summary**
 
