@@ -2,6 +2,11 @@
 
 Each `## <version>` section becomes that version's release notes on addons.mozilla.org and GitHub, so write it for users. `scripts/release.sh` won't release a version without one.
 
+## 0.4.0
+
+- Now available in German, French, Dutch, Spanish and Italian
+- New options page listing the sites where Cookie Pookie is off, with a button to turn each back on (also reachable via "Manage sites" in the popup)
+
 ## 0.3.1
 
 First release.
