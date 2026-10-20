@@ -6,10 +6,12 @@
     <script src="shared.js"></script>
   </head>
   <body>
-    <div data-banner>
-      <p>We use cookies and similar technologies to personalise ads and measure performance. Do you consent to the use of cookies?</p>
-      <button type="button" data-choice="accept">Accept all</button>
-      <button type="button" data-choice="reject">Reject all</button>
+    <!-- Markup modelled on Piano's consent banner, which loads in an iframe.
+         The engine only uses explicit rules inside iframes, never heuristics. -->
+    <div id="piano-cookie_banner" data-banner>
+      <p>We use cookies and similar technologies to personalise ads and measure performance.</p>
+      <button type="button" data-acceptance-button data-choice="accept">Accept all</button>
+      <button type="button" data-close-button data-choice="reject">Continue without accepting</button>
     </div>
   </body>
 </html>
