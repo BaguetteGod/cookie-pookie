@@ -4,6 +4,8 @@
   "version": "0.3.0",
   "description": "Automatically rejects cookie consent banners so you never have to click them again.",
   "icons": {
+    "16": "icons/icon-16.svg",
+    "32": "icons/icon.svg",
     "48": "icons/icon.svg",
     "96": "icons/icon.svg"
   },
@@ -46,6 +48,9 @@
   "action": {
     "default_title": "Cookie Pookie",
     "default_popup": "src/popup/popup.html",
-    "default_icon": "icons/icon.svg"
+    "default_icon": {
+      "16": "icons/icon-16.svg",
+      "32": "icons/icon.svg"
+    }
   }
 }
