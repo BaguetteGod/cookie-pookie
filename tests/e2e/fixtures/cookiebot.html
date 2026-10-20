@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cookiebot banner</title>
+    <script src="shared.js"></script>
+    <script>
+      // Stand-in for the object Cookiebot's own script creates, which the engine uses to detect it.
+      window.Cookiebot = {
+        hasResponse: false,
+        declined: false,
+        dialog: { visible: true },
+        withdraw() {},
+        hide() {}
+      };
+    </script>
+  </head>
+  <body>
+    <h1>A shop</h1>
+    <p>Some page content.</p>
+
+    <!-- Markup modelled on Cookiebot's consent dialog. -->
+    <div id="CybotCookiebotDialog" data-banner role="dialog" aria-label="Cookie consent">
+      <p id="CybotCookiebotDialogBodyContentText">This website uses cookies to personalise content and ads.</p>
+      <button id="CybotCookiebotDialogBodyLevelButtonLevelOptinDeclineAll" data-choice="reject">Deny</button>
+      <button id="CybotCookiebotDialogBodyLevelButtonLevelOptinAllowallSelection" data-choice="allow-selection">Allow selection</button>
+      <button id="CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll" data-choice="accept">Allow all</button>
+    </div>
+  </body>
+</html>

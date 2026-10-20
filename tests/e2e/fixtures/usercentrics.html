@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Usercentrics banner</title>
+    <script src="shared.js"></script>
+    <script>
+      // Stand-in for the API Usercentrics' own script creates, which the engine uses to detect it.
+      window.UC_UI = {
+        closeCMP: () => true,
+        denyAllConsents: () => true,
+        acceptAllConsents: () => true,
+        areAllConsentsAccepted: () => false
+      };
+    </script>
+  </head>
+  <body>
+    <h1>A travel site</h1>
+    <p>Some page content.</p>
+
+    <!-- Usercentrics renders its banner inside a shadow root on #usercentrics-root. -->
+    <div id="usercentrics-root"></div>
+    <script>
+      document.getElementById("usercentrics-root").attachShadow({ mode: "open" }).innerHTML = `
+        <div data-testid="uc-container" data-banner role="dialog" aria-label="Privacy settings">
+          <p>We use cookies and similar technologies to improve our services and show you ads.</p>
+          <button data-testid="uc-more-button" data-choice="settings">Settings</button>
+          <button data-testid="uc-deny-all-button" data-choice="reject">Deny</button>
+          <button data-testid="uc-accept-all-button" data-choice="accept">Accept all</button>
+        </div>`;
+    </script>
+  </body>
+</html>

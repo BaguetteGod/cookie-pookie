@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SP Consent Message</title>
+    <script src="shared.js"></script>
+  </head>
+  <body>
+    <!-- Served as /index.html?message_id=... inside sourcepoint.html's iframe, like Sourcepoint's
+         notice. Its buttons carry sp_choice_type classes: 11 accepts, 12 opens settings, 13 rejects. -->
+    <div class="message-container" data-banner>
+      <p>We and our partners use cookies to personalise ads and measure performance.</p>
+      <button class="message-component sp_choice_type_12" data-choice="settings">Settings</button>
+      <button class="message-component sp_choice_type_13" data-choice="reject">Reject all</button>
+      <button class="message-component sp_choice_type_11" data-choice="accept">Accept all</button>
+    </div>
+  </body>
+</html>

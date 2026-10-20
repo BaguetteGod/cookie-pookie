@@ -9,7 +9,8 @@ function record(choice) {
 document.addEventListener(
   "click",
   (event) => {
-    const button = event.target.closest("[data-choice]");
+    // composedPath() also reaches into shadow roots (Usercentrics renders in one).
+    const button = event.composedPath().find((el) => el instanceof Element && el.matches("[data-choice]"));
     if (!button) return;
     record(button.dataset.choice);
     const banner = button.closest("[data-banner]");

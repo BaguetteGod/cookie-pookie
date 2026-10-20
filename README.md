@@ -25,7 +25,7 @@ Code layout:
 | `scripts/release.sh`, `scripts/amo-metadata.mjs` | Start a release, and write its addons.mozilla.org notes from `CHANGELOG.md`. |
 | `docs/amo-listing.md`, `scripts/amo-listing.mjs` | The addons.mozilla.org listing text in every language, and the script that sends it there. |
 | `tests/*.test.mjs` | Unit tests for the background logic, the report link and the translations. |
-| `tests/e2e/` | Real-Firefox tests: test pages with sample banners, run with Puppeteer. |
+| `tests/e2e/` | Real-Firefox tests, run with Puppeteer: test pages modelled on OneTrust, Cookiebot, Didomi, Quantcast, CookieYes, Usercentrics and Sourcepoint, plus banners for the heuristics, inside an iframe and without a reject button. Each test also checks which rule handled the banner, using a test-only content script (`probe.js`) in a copy of the add-on. |
 | `.github/workflows/` | `test.yml` runs all tests and the linter on every push and PR; `update-autoconsent.yml` updates the rules weekly; `release.yml` submits tagged releases to addons.mozilla.org; `listing.yml` updates the listing text there when `docs/amo-listing.md` changes. |
 
 The per-site switch is decided by the tab's top-level site, so it also covers consent banners loaded in iframes.
