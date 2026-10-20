@@ -85,5 +85,5 @@ jobs:
             "Rebuilt \`vendor/autoconsent\` from autoconsent v$LATEST (was v$CURRENT)." \
             "Unit tests, Mozilla's linter and the real-Firefox tests passed in the workflow that opened this PR." \
             "Changes: https://github.com/duckduckgo/autoconsent/compare/v$CURRENT...v$LATEST" > pr-body.md
-          gh pr create --base main --head "$BRANCH" \
+          gh pr create --base master --head "$BRANCH" \
             --title "Update autoconsent rules to $LATEST" --body-file pr-body.md
