@@ -24,8 +24,11 @@ const ALL_SITES = { origins: ["<all_urls>"] };
 // Firefox can leave host access ungranted (often on Android, or if the user
 // revoked it). Without it the content scripts never run, so ask for it here.
 async function checkPermission() {
-  const granted = await browser.permissions.contains(ALL_SITES);
-  $("permission-warning").hidden = granted;
+  try {
+    $("permission-warning").hidden = await browser.permissions.contains(ALL_SITES);
+  } catch {
+    // If the check itself fails, don't block the rest of the popup.
+  }
 }
 
 async function init() {
