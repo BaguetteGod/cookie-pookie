@@ -96,6 +96,8 @@ Releases go to [addons.mozilla.org](https://addons.mozilla.org) through the **Re
 
 A merged autoconsent update only reaches users once it's released, so release after merging one.
 
+The automated tests only cover desktop Firefox. Before releases that change the popup, the options page, the manifest or permissions, run through the [Android checklist](docs/android-testing.md) on a phone.
+
 The listing's summary, description and privacy policy live in [docs/amo-listing.md](docs/amo-listing.md), in every language. Pushing a change to it runs the **Update AMO listing** workflow, which sends it to addons.mozilla.org; check the result first with `node scripts/amo-listing.mjs --dry-run`. Screenshots and categories are still edited on the website.
 
 One-time setup: create API credentials at [addons.mozilla.org/developers/addon/api/key](https://addons.mozilla.org/developers/addon/api/key/), then add them as repository secrets under **Settings → Secrets and variables → Actions**: the JWT issuer as `AMO_JWT_ISSUER` and the JWT secret as `AMO_JWT_SECRET`.
