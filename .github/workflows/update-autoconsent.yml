@@ -20,10 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      PUPPETEER_SKIP_DOWNLOAD: "true"
+      PUPPETEER_CHROME_SKIP_DOWNLOAD: "true"
+      PUPPETEER_CHROME_HEADLESS_SHELL_SKIP_DOWNLOAD: "true"
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Find newest release
         id: version
@@ -47,7 +48,7 @@ jobs:
           fi
 
       - if: steps.version.outputs.update == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 
@@ -64,7 +65,7 @@ jobs:
           npm install --no-audit --no-fund
           npm test
           npm run lint
-          npx puppeteer browsers install firefox@stable
+          npx puppeteer browsers install firefox
           npm run test:e2e
 
       - name: Open pull request
