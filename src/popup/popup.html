@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Cookie Pookie</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
@@ -10,6 +11,11 @@
       <img src="../../icons/icon.svg" alt="" width="28" height="28" />
       <h1>Cookie Pookie</h1>
     </header>
+
+    <div class="warning" id="permission-warning" hidden>
+      <p>Cookie Pookie needs access to all websites to reject their cookie banners.</p>
+      <button type="button" id="grant">Allow on all websites</button>
+    </div>
 
     <label class="row">
       <span>Reject cookie banners</span>
@@ -23,9 +29,11 @@
 
     <p class="stats" id="page-status">No cookie banner handled on this page.</p>
     <p class="note"><span id="total">0</span> banners handled in total</p>
+    <p class="note">Switch changes apply when you reload the page.</p>
 
-    <p class="note">Changes apply when you reload the page.</p>
+    <button type="button" id="report">Report a broken site</button>
 
+    <script src="../report.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

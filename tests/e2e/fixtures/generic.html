@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Homegrown banner</title>
+    <script src="shared.js"></script>
+    <style>
+      .consent {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        max-width: 420px;
+        padding: 16px;
+        background: #fff;
+        border: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>A small shop</h1>
+    <p>Some page content.</p>
+
+    <!-- A banner from no known platform: only heuristics can handle it. -->
+    <div class="consent" data-banner role="dialog" aria-modal="true">
+      <p>
+        This website uses cookies to improve your experience and to show you personalised advertising.
+        You can accept all cookies or reject non-essential cookies.
+      </p>
+      <button type="button" data-choice="accept">Accept all</button>
+      <button type="button" data-choice="reject">Reject all</button>
+    </div>
+  </body>
+</html>

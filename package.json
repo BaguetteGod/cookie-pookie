@@ -1,16 +1,18 @@
 {
   "name": "cookie-pookie",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Firefox add-on that automatically rejects cookie consent banners.",
   "scripts": {
     "start": "web-ext run --source-dir . --browser-console",
+    "test": "node tests/background.test.mjs && node tests/report.test.mjs",
+    "test:e2e": "node tests/e2e/run.mjs",
     "lint": "web-ext lint --source-dir .",
     "build": "web-ext build --source-dir . --overwrite-dest",
-    "test": "node tests/background.test.mjs",
     "update-autoconsent": "scripts/build-autoconsent.sh"
   },
   "devDependencies": {
+    "puppeteer": "^24.0.0",
     "web-ext": "^8.0.0"
   }
 }

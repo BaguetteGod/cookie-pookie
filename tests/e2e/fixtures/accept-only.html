@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Accept-only banner</title>
+    <script src="shared.js"></script>
+    <style>
+      .consent {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px;
+        background: #fff;
+        border-top: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>A blog</h1>
+    <p>Some page content.</p>
+
+    <!-- Only an accept button: Cookie Pookie must never click it. -->
+    <div class="consent" data-banner role="dialog">
+      <p>We use cookies to improve your experience and for advertising. By continuing you agree to our use of cookies.</p>
+      <button type="button" data-choice="accept">Accept all cookies</button>
+    </div>
+  </body>
+</html>

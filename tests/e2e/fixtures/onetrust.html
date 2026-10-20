@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OneTrust banner</title>
+    <script src="shared.js"></script>
+    <style>
+      #onetrust-banner-sdk {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px;
+        background: #fff;
+        border-top: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>A news article</h1>
+    <p>Some page content.</p>
+
+    <!-- Markup modelled on the OneTrust consent SDK. -->
+    <div id="onetrust-consent-sdk">
+      <div id="onetrust-banner-sdk" data-banner role="dialog" aria-label="Privacy">
+        <p id="onetrust-policy-text">
+          We and our partners use cookies to personalise content and ads and to analyse our traffic.
+        </p>
+        <div id="onetrust-button-group">
+          <button id="onetrust-pc-btn-handler" data-choice="settings">Cookie settings</button>
+          <button id="onetrust-reject-all-handler" data-choice="reject">Reject all</button>
+          <button id="onetrust-accept-btn-handler" data-choice="accept">Accept all cookies</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
