@@ -2,12 +2,35 @@
 /* global buildReportUrl */
 
 const $ = (id) => document.getElementById(id);
+const t = (key, ...substitutions) => browser.i18n.getMessage(key, substitutions);
+const language = browser.i18n.getUILanguage();
+
+// Fills every element marked with data-i18n="messageName" with that message.
+function localize() {
+  document.documentElement.lang = language;
+  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
+}
 
 function describe(results) {
-  if (!results.length) return "No cookie banner handled on this page.";
-  return results
-    .map(({ cmp, cosmetic }) => (cosmetic ? `Hid the ${cmp} banner (it had no reject option).` : `Rejected cookies on the ${cmp} banner.`))
-    .join(" ");
+  if (!results.length) return t("statusNone");
+  return results.map(({ cmp, cosmetic }) => t(cosmetic ? "statusHidden" : "statusRejected", cmp)).join(" ");
+}
+
+// "On <strong>example.com</strong>": the site name can sit anywhere in the
+// translated sentence, so split the message around it.
+function showSiteLabel(host) {
+  const marker = "\u0001";
+  const [before, after = ""] = t("siteLabel", marker).split(marker);
+  const name = document.createElement("strong");
+  name.textContent = host || t("thisPage");
+  $("site-label").replaceChildren(before, name, after);
+}
+
+// Picks total_one, total_few, ... by the language's plural rules, falling back to total_other.
+function totalText(count) {
+  const category = new Intl.PluralRules(language).select(count);
+  const formatted = count.toLocaleString(language);
+  return t(`total_${category}`, formatted) || t("total_other", formatted);
 }
 
 async function engineVersion() {
@@ -32,6 +55,7 @@ async function checkPermission() {
 }
 
 async function init() {
+  localize();
   await checkPermission();
   $("grant").addEventListener("click", async () => {
     if (await browser.permissions.request(ALL_SITES)) $("permission-warning").hidden = true;
@@ -50,12 +74,11 @@ async function init() {
   const { results } = await browser.runtime.sendMessage({ type: "getTabResults", tabId: tab.id });
 
   $("enabled").checked = settings.enabled;
-  $("host").textContent = host || "this page";
+  showSiteLabel(host);
   $("site").checked = !settings.disabledSites.includes(host);
   $("site").disabled = !host || !settings.enabled;
   $("page-status").textContent = describe(results);
-  const total = settings.totalHandled;
-  $("total").textContent = `${total} ${total === 1 ? "banner" : "banners"} handled in total`;
+  $("total").textContent = totalText(settings.totalHandled);
   $("report").disabled = !host;
 
   $("enabled").addEventListener("change", async (e) => {

@@ -1,0 +1,79 @@
+{
+  "extensionDescription": {
+    "message": "Automatically rejects cookie consent banners so you never have to click them again.",
+    "description": "Add-on description in the Add-ons Manager and on addons.mozilla.org."
+  },
+  "permissionWarning": {
+    "message": "Cookie Pookie needs access to all websites to reject their cookie banners.",
+    "description": "Popup warning when Firefox hasn't granted access to all websites."
+  },
+  "permissionGrant": {
+    "message": "Allow on all websites",
+    "description": "Button under the permission warning."
+  },
+  "enabledLabel": {
+    "message": "Reject cookie banners",
+    "description": "Label of the switch that turns Cookie Pookie on or off everywhere."
+  },
+  "siteLabel": {
+    "message": "On $HOST$",
+    "description": "Label of the per-site switch. $HOST$ is shown in bold: a site name such as example.com, or the thisPage message.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "this page",
+    "description": "Stands in for the site name in siteLabel on pages that aren't websites."
+  },
+  "statusNone": {
+    "message": "No cookie banner handled on this page.",
+    "description": "Popup status when nothing was handled on the current page."
+  },
+  "statusRejected": {
+    "message": "Rejected cookies on the $CMP$ banner.",
+    "description": "Popup status after rejecting a banner. $CMP$ is the consent platform's name, such as Onetrust.",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusHidden": {
+    "message": "Hid the $CMP$ banner (it had no reject option).",
+    "description": "Popup status after hiding a banner that had no reject button. $CMP$ is the consent platform's name.",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_one": {
+    "message": "$COUNT$ banner handled in total",
+    "description": "Banners handled since install, for numbers in the 'one' plural category (e.g. 1). $COUNT$ is the number.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_other": {
+    "message": "$COUNT$ banners handled in total",
+    "description": "Banners handled since install, for all other numbers. Add total_few, total_many etc. for languages that need them.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "reloadNote": {
+    "message": "Switch changes apply when you reload the page.",
+    "description": "Popup note under the switches."
+  },
+  "reportButton": {
+    "message": "Report a broken site",
+    "description": "Button that opens a pre-filled GitHub issue about the current site."
+  }
+}

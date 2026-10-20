@@ -1,0 +1,66 @@
+{
+  "extensionDescription": {
+    "message": "Refuse automatiquement les bannières de cookies pour que vous n’ayez plus jamais à cliquer dessus."
+  },
+  "permissionWarning": {
+    "message": "Cookie Pookie a besoin d’accéder à tous les sites web pour refuser leurs bannières de cookies."
+  },
+  "permissionGrant": {
+    "message": "Autoriser sur tous les sites web"
+  },
+  "enabledLabel": {
+    "message": "Refuser les bannières de cookies"
+  },
+  "siteLabel": {
+    "message": "Sur $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "cette page"
+  },
+  "statusNone": {
+    "message": "Aucune bannière de cookies traitée sur cette page."
+  },
+  "statusRejected": {
+    "message": "Cookies refusés sur la bannière $CMP$.",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusHidden": {
+    "message": "Bannière $CMP$ masquée (elle n’offrait pas d’option de refus).",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_one": {
+    "message": "$COUNT$ bannière traitée au total",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_other": {
+    "message": "$COUNT$ bannières traitées au total",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "reloadNote": {
+    "message": "Les modifications s’appliquent au rechargement de la page."
+  },
+  "reportButton": {
+    "message": "Signaler un site défectueux"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "extensionDescription": {
+    "message": "Weigert cookiebanners automatisch, zodat je er nooit meer op hoeft te klikken."
+  },
+  "permissionWarning": {
+    "message": "Cookie Pookie heeft toegang tot alle websites nodig om hun cookiebanners te weigeren."
+  },
+  "permissionGrant": {
+    "message": "Toestaan op alle websites"
+  },
+  "enabledLabel": {
+    "message": "Cookiebanners weigeren"
+  },
+  "siteLabel": {
+    "message": "Op $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "deze pagina"
+  },
+  "statusNone": {
+    "message": "Geen cookiebanner afgehandeld op deze pagina."
+  },
+  "statusRejected": {
+    "message": "Cookies geweigerd op de $CMP$-banner.",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusHidden": {
+    "message": "$CMP$-banner verborgen (er was geen optie om te weigeren).",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_one": {
+    "message": "$COUNT$ banner in totaal afgehandeld",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_other": {
+    "message": "$COUNT$ banners in totaal afgehandeld",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "reloadNote": {
+    "message": "Wijzigingen gelden zodra je de pagina opnieuw laadt."
+  },
+  "reportButton": {
+    "message": "Website met problemen melden"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "extensionDescription": {
+    "message": "Rifiuta automaticamente i banner dei cookie, così non dovrai più cliccarli."
+  },
+  "permissionWarning": {
+    "message": "Cookie Pookie ha bisogno dell’accesso a tutti i siti web per rifiutare i loro banner dei cookie."
+  },
+  "permissionGrant": {
+    "message": "Consenti su tutti i siti web"
+  },
+  "enabledLabel": {
+    "message": "Rifiuta i banner dei cookie"
+  },
+  "siteLabel": {
+    "message": "Su $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "questa pagina"
+  },
+  "statusNone": {
+    "message": "Nessun banner dei cookie gestito in questa pagina."
+  },
+  "statusRejected": {
+    "message": "Cookie rifiutati nel banner $CMP$.",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusHidden": {
+    "message": "Banner $CMP$ nascosto (non offriva un’opzione di rifiuto).",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_one": {
+    "message": "$COUNT$ banner gestito in totale",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_other": {
+    "message": "$COUNT$ banner gestiti in totale",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "reloadNote": {
+    "message": "Le modifiche si applicano quando ricarichi la pagina."
+  },
+  "reportButton": {
+    "message": "Segnala un sito non funzionante"
+  }
+}

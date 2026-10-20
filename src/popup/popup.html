@@ -13,25 +13,25 @@
     </header>
 
     <div class="warning" id="permission-warning" hidden>
-      <p>Cookie Pookie needs access to all websites to reject their cookie banners.</p>
-      <button type="button" id="grant">Allow on all websites</button>
+      <p data-i18n="permissionWarning">Cookie Pookie needs access to all websites to reject their cookie banners.</p>
+      <button type="button" id="grant" data-i18n="permissionGrant">Allow on all websites</button>
     </div>
 
     <label class="row">
-      <span>Reject cookie banners</span>
+      <span data-i18n="enabledLabel">Reject cookie banners</span>
       <input type="checkbox" id="enabled" />
     </label>
 
     <label class="row">
-      <span>On <strong id="host">this site</strong></span>
+      <span id="site-label">On <strong>this page</strong></span>
       <input type="checkbox" id="site" />
     </label>
 
-    <p class="stats" id="page-status">No cookie banner handled on this page.</p>
-    <p class="note" id="total">0 banners handled in total</p>
-    <p class="note">Switch changes apply when you reload the page.</p>
+    <p class="stats" id="page-status" data-i18n="statusNone">No cookie banner handled on this page.</p>
+    <p class="note" id="total"></p>
+    <p class="note" data-i18n="reloadNote">Switch changes apply when you reload the page.</p>
 
-    <button type="button" id="report">Report a broken site</button>
+    <button type="button" id="report" data-i18n="reportButton">Report a broken site</button>
 
     <script src="../report.js"></script>
     <script src="popup.js"></script>

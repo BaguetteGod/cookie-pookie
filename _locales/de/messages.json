@@ -1,0 +1,66 @@
+{
+  "extensionDescription": {
+    "message": "Lehnt Cookie-Banner automatisch ab, damit Sie sie nie wieder wegklicken müssen."
+  },
+  "permissionWarning": {
+    "message": "Cookie Pookie braucht Zugriff auf alle Websites, um deren Cookie-Banner abzulehnen."
+  },
+  "permissionGrant": {
+    "message": "Auf allen Websites erlauben"
+  },
+  "enabledLabel": {
+    "message": "Cookie-Banner ablehnen"
+  },
+  "siteLabel": {
+    "message": "Auf $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "dieser Seite"
+  },
+  "statusNone": {
+    "message": "Auf dieser Seite wurde kein Cookie-Banner bearbeitet."
+  },
+  "statusRejected": {
+    "message": "Cookies im $CMP$-Banner abgelehnt.",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusHidden": {
+    "message": "$CMP$-Banner ausgeblendet (es gab keine Option zum Ablehnen).",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_one": {
+    "message": "$COUNT$ Banner insgesamt bearbeitet",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_other": {
+    "message": "$COUNT$ Banner insgesamt bearbeitet",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "reloadNote": {
+    "message": "Änderungen gelten, sobald Sie die Seite neu laden."
+  },
+  "reportButton": {
+    "message": "Defekte Website melden"
+  }
+}

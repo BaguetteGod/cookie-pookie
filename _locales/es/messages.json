@@ -1,0 +1,66 @@
+{
+  "extensionDescription": {
+    "message": "Rechaza automáticamente los avisos de cookies para que no tengas que volver a hacer clic en ellos."
+  },
+  "permissionWarning": {
+    "message": "Cookie Pookie necesita acceso a todos los sitios web para rechazar sus avisos de cookies."
+  },
+  "permissionGrant": {
+    "message": "Permitir en todos los sitios web"
+  },
+  "enabledLabel": {
+    "message": "Rechazar avisos de cookies"
+  },
+  "siteLabel": {
+    "message": "En $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "esta página"
+  },
+  "statusNone": {
+    "message": "No se ha gestionado ningún aviso de cookies en esta página."
+  },
+  "statusRejected": {
+    "message": "Cookies rechazadas en el aviso de $CMP$.",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusHidden": {
+    "message": "Se ocultó el aviso de $CMP$ (no tenía opción para rechazar).",
+    "placeholders": {
+      "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_one": {
+    "message": "$COUNT$ aviso gestionado en total",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "total_other": {
+    "message": "$COUNT$ avisos gestionados en total",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "reloadNote": {
+    "message": "Los cambios se aplican al recargar la página."
+  },
+  "reportButton": {
+    "message": "Informar de un sitio con problemas"
+  }
+}

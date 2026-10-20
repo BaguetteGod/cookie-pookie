@@ -19,10 +19,11 @@ Code layout:
 | `src/background.js` | Gives each frame its rules and settings, runs the engine's main-world snippets, applies the on/off switches and counts handled banners. |
 | `src/popup/` | Toolbar popup: global switch, per-site switch, what happened on this page, "Report a broken site", and a prompt when site access is missing. |
 | `src/report.js` | Builds the pre-filled GitHub issue link for broken-site reports. |
+| `_locales/` | Translations: English, German, French, Dutch, Spanish and Italian. |
 | `vendor/autoconsent/` | Built copy of autoconsent and its rules (MPL-2.0). Don't edit by hand. |
 | `scripts/build-autoconsent.sh` | Rebuilds `vendor/autoconsent/` from an autoconsent release. |
 | `scripts/release.sh`, `scripts/amo-metadata.mjs` | Start a release, and write its addons.mozilla.org notes from `CHANGELOG.md`. |
-| `tests/*.test.mjs` | Unit tests for the background logic and report link, using a fake `browser` API. |
+| `tests/*.test.mjs` | Unit tests for the background logic, the report link and the translations. |
 | `tests/e2e/` | Real-Firefox tests: test pages with sample banners, run with Puppeteer. |
 | `.github/workflows/` | `test.yml` runs all tests and the linter on every push and PR; `update-autoconsent.yml` updates the rules weekly; `release.yml` submits tagged releases to addons.mozilla.org. |
 
@@ -54,6 +55,16 @@ npx puppeteer browsers install firefox
 npm run test:e2e   # real Firefox with the add-on, against tests/e2e/fixtures
 npm run build  # zip for addons.mozilla.org, in web-ext-artifacts/
 ```
+
+## Translations
+
+The popup and the add-on description are translated with Firefox's [i18n API](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/Internationalization): `_locales/<language>/messages.json` holds each language's text, and `_locales/en/messages.json` also describes each message for translators. Firefox picks the language from its own interface language and falls back to English.
+
+To add a language, copy `_locales/en/messages.json` to `_locales/<code>/messages.json`, translate each `message`, and drop the `description` fields. Keep `$PLACEHOLDERS$` as they are. The `total_*` messages are plural forms: `total_one` and `total_other` are required, and languages that need more forms add them, such as `total_few` and `total_many` for Polish. `npm test` checks that every language has every message with the right placeholders.
+
+Broken-site reports stay in English, since they're GitHub issues for the maintainer.
+
+The translations were written without native-speaker review; corrections are welcome.
 
 ## Updating the rules
 
