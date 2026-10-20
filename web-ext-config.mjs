@@ -5,6 +5,7 @@ export default {
     "package-lock.json",
     "README.md",
     "CHANGELOG.md",
+    "docs",
     "node_modules",
     "scripts",
     "tests",

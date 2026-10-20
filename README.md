@@ -32,7 +32,7 @@ Code layout:
 
 The per-site switch is decided by the tab's top-level site, so it also covers consent banners loaded in iframes.
 
-Requires Firefox 128 or later, on desktop or Android. On Android the popup opens as a full page; if Firefox hasn't granted access to all websites, the popup shows a button to allow it.
+Requires Firefox 140 or later on desktop, or 142 or later on Android (the first versions that understand the manifest's `data_collection_permissions`). On Android the popup opens as a full page; if Firefox hasn't granted access to all websites, the popup shows a button to allow it.
 
 ### Reporting broken sites
 
