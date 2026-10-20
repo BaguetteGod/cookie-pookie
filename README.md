@@ -75,4 +75,8 @@ The script needs git plus either [bun](https://bun.sh) or Node with npx. `vendor
 - The add-on ID `cookie-pookie@baguettegod` in `manifest.json` is permanent once published; never change it.
 - `data_collection_permissions` in `manifest.json` declares that the add-on collects no data. Update it if that ever changes.
 - addons.mozilla.org asks for the source of bundled code. Point reviewers to `scripts/build-autoconsent.sh` and the autoconsent release in `vendor/autoconsent/VERSION`.
-- `vendor/autoconsent/` is under the Mozilla Public License 2.0; keep its `LICENSE` file and headers. Your own code can use any license.
+- `vendor/autoconsent/` is under the Mozilla Public License 2.0, like the rest of Cookie Pookie; keep its `LICENSE` file and headers.
+
+## License
+
+Cookie Pookie is licensed under the [Mozilla Public License 2.0](LICENSE). It bundles [autoconsent](https://github.com/duckduckgo/autoconsent) by DuckDuckGo, also under MPL 2.0.
