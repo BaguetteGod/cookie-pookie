@@ -26,9 +26,9 @@ const isPluralForm = (key) => /_(zero|one|two|few|many)$/.test(key);
 }
 
 {
-  const html = read("src/popup/popup.html");
-  const js = read("src/popup/popup.js");
-  // data-i18n="key" in the HTML, t("key", ...) in the script, plus the two keys
+  const html = read("src/popup/popup.html") + read("src/options/options.html");
+  const js = read("src/popup/popup.js") + read("src/options/options.js");
+  // data-i18n="key" in the HTML, t("key", ...) in the scripts, plus the two keys
   // the script picks between and the total_<plural form> messages.
   const keys = [
     ...[...html.matchAll(/data-i18n="(\w+)"/g)].map((m) => m[1]),
@@ -40,7 +40,7 @@ const isPluralForm = (key) => /_(zero|one|two|few|many)$/.test(key);
   ];
   assert.ok(js.includes('"statusHidden" : "statusRejected"') && js.includes("`total_${"), "update this test's key list");
   for (const key of keys) assert.ok(english[key], `popup uses missing message ${key}`);
-  console.log(`ok - all ${new Set(keys).size} messages the popup uses exist in English`);
+  console.log(`ok - all ${new Set(keys).size} messages the popup and options page use exist in English`);
 }
 
 for (const [key, { message, placeholders = {} }] of Object.entries(english)) {

@@ -62,5 +62,28 @@
   },
   "reportButton": {
     "message": "Website met problemen melden"
+  },
+  "manageSites": {
+    "message": "Websites beheren"
+  },
+  "optionsHeading": {
+    "message": "Websites waar Cookie Pookie uitstaat"
+  },
+  "optionsEmpty": {
+    "message": "Cookie Pookie staat aan op alle websites. Wil je het voor een website uitzetten, open dan op die website de pop-up van Cookie Pookie."
+  },
+  "optionsTurnOn": {
+    "message": "Weer aanzetten"
+  },
+  "optionsTurnOnLabel": {
+    "message": "Cookie Pookie weer aanzetten voor $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsReloadNote": {
+    "message": "Wijzigingen gelden zodra je de website opnieuw laadt."
   }
 }

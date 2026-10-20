@@ -75,5 +75,34 @@
   "reportButton": {
     "message": "Report a broken site",
     "description": "Button that opens a pre-filled GitHub issue about the current site."
+  },
+  "manageSites": {
+    "message": "Manage sites",
+    "description": "Popup link that opens the options page with the sites where Cookie Pookie is off."
+  },
+  "optionsHeading": {
+    "message": "Sites where Cookie Pookie is off",
+    "description": "Heading of the options page."
+  },
+  "optionsEmpty": {
+    "message": "Cookie Pookie is on for every site. To turn it off for one, open the Cookie Pookie popup on that site.",
+    "description": "Options page text when Cookie Pookie isn't turned off anywhere."
+  },
+  "optionsTurnOn": {
+    "message": "Turn back on",
+    "description": "Button next to each site on the options page."
+  },
+  "optionsTurnOnLabel": {
+    "message": "Turn Cookie Pookie back on for $HOST$",
+    "description": "Screen-reader label of the optionsTurnOn button. $HOST$ is the site, such as example.com.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsReloadNote": {
+    "message": "Changes apply to a site the next time you load it.",
+    "description": "Note at the bottom of the options page."
   }
 }

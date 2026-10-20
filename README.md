@@ -17,8 +17,10 @@ Code layout:
 | --- | --- |
 | `src/content/content.js` | Starts the engine in every frame and relays its messages. |
 | `src/background.js` | Gives each frame its rules and settings, runs the engine's main-world snippets, applies the on/off switches and counts handled banners. |
-| `src/popup/` | Toolbar popup: global switch, per-site switch, what happened on this page, "Report a broken site", and a prompt when site access is missing. |
+| `src/popup/` | Toolbar popup: global switch, per-site switch, what happened on this page, "Report a broken site", a link to the options page, and a prompt when site access is missing. |
+| `src/options/` | Options page (Add-ons Manager → Cookie Pookie → Preferences, or **Manage sites** in the popup): lists the sites where Cookie Pookie is off, each with a button to turn it back on. |
 | `src/report.js` | Builds the pre-filled GitHub issue link for broken-site reports. |
+| `src/theme.css`, `src/i18n.js` | Colours (light and dark) and translation helpers shared by the popup and the options page. |
 | `_locales/` | Translations: English, German, French, Dutch, Spanish and Italian. |
 | `vendor/autoconsent/` | Built copy of autoconsent and its rules (MPL-2.0). Don't edit by hand. |
 | `scripts/build-autoconsent.sh` | Rebuilds `vendor/autoconsent/` from an autoconsent release. |

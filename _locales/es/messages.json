@@ -62,5 +62,28 @@
   },
   "reportButton": {
     "message": "Informar de un sitio con problemas"
+  },
+  "manageSites": {
+    "message": "Gestionar sitios"
+  },
+  "optionsHeading": {
+    "message": "Sitios donde Cookie Pookie está desactivado"
+  },
+  "optionsEmpty": {
+    "message": "Cookie Pookie está activado en todos los sitios. Para desactivarlo en uno, abre la ventana de Cookie Pookie en ese sitio."
+  },
+  "optionsTurnOn": {
+    "message": "Volver a activar"
+  },
+  "optionsTurnOnLabel": {
+    "message": "Volver a activar Cookie Pookie en $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsReloadNote": {
+    "message": "Los cambios se aplican la próxima vez que cargues el sitio."
   }
 }

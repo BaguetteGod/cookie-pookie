@@ -49,6 +49,9 @@
       "all_frames": true
     }
   ],
+  "options_ui": {
+    "page": "src/options/options.html"
+  },
   "action": {
     "default_title": "Cookie Pookie",
     "default_popup": "src/popup/popup.html",

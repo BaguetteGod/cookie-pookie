@@ -1,15 +1,7 @@
 /* Cookie Pookie — toolbar popup. */
-/* global buildReportUrl */
+/* global buildReportUrl, t, language, localize */
 
 const $ = (id) => document.getElementById(id);
-const t = (key, ...substitutions) => browser.i18n.getMessage(key, substitutions);
-const language = browser.i18n.getUILanguage();
-
-// Fills every element marked with data-i18n="messageName" with that message.
-function localize() {
-  document.documentElement.lang = language;
-  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
-}
 
 function describe(results) {
   if (!results.length) return t("statusNone");
@@ -92,6 +84,11 @@ async function init() {
     if (e.target.checked) next.delete(host);
     else next.add(host);
     await browser.storage.local.set({ disabledSites: [...next] });
+  });
+
+  $("manage").addEventListener("click", async () => {
+    await browser.runtime.openOptionsPage();
+    window.close();
   });
 
   $("report").addEventListener("click", async () => {

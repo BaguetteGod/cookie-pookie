@@ -1,0 +1,22 @@
+/* Cookie Pookie — colours shared by the popup and the options page, light and dark. */
+:root {
+  --bg: #fffaf3;
+  --fg: #3b2a1a;
+  --muted: #8b7560;
+  --line: #ecdcc8;
+  --accent: #8a5a2b;
+  --button-bg: #f3e6d4;
+  --warning-bg: #fbe3c8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #2a211a;
+    --fg: #f4e9dc;
+    --muted: #b8a38c;
+    --line: #4a3a2c;
+    --accent: #d9a066;
+    --button-bg: #3a2d22;
+    --warning-bg: #5a3a1c;
+  }
+}
