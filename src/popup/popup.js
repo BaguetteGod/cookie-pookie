@@ -54,7 +54,8 @@ async function init() {
   $("site").checked = !settings.disabledSites.includes(host);
   $("site").disabled = !host || !settings.enabled;
   $("page-status").textContent = describe(results);
-  $("total").textContent = settings.totalHandled;
+  const total = settings.totalHandled;
+  $("total").textContent = `${total} ${total === 1 ? "banner" : "banners"} handled in total`;
   $("report").disabled = !host;
 
   $("enabled").addEventListener("change", async (e) => {
