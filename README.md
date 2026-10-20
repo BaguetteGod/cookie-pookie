@@ -31,7 +31,7 @@ Requires Firefox 128 or later, on desktop or Android. On Android the popup opens
 
 ### Reporting broken sites
 
-The popup's **Report a broken site** button opens a pre-filled issue in this repository with the page address (without query string or fragment, which can hold personal data), what Cookie Pookie handled, and version numbers. While the repository is private, only people with access to it can file reports; change `COOKIE_POOKIE_ISSUES_URL` in `src/report.js` if reports should go elsewhere.
+The popup's **Report a broken site** button opens a pre-filled issue in this repository with the page address (without query string or fragment, which can hold personal data), what Cookie Pookie handled, and version numbers. Change `COOKIE_POOKIE_ISSUES_URL` in `src/report.js` if reports should go elsewhere.
 
 ## Develop
 
@@ -72,6 +72,7 @@ The script needs git plus either [bun](https://bun.sh) or Node with npx. `vendor
 
 ## Before publishing
 
-- Replace the placeholder add-on ID `cookie-pookie@example.com` in `manifest.json` with one you own.
+- The add-on ID `cookie-pookie@baguettegod` in `manifest.json` is permanent once published; never change it.
+- `data_collection_permissions` in `manifest.json` declares that the add-on collects no data. Update it if that ever changes.
 - addons.mozilla.org asks for the source of bundled code. Point reviewers to `scripts/build-autoconsent.sh` and the autoconsent release in `vendor/autoconsent/VERSION`.
 - `vendor/autoconsent/` is under the Mozilla Public License 2.0; keep its `LICENSE` file and headers. Your own code can use any license.
