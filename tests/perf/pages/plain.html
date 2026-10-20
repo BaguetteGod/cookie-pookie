@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>An article</title>
+  </head>
+  <body>
+    <!-- A typical page with no cookie banner: the add-on only adds overhead here. -->
+    <header><nav><a href="#">Home</a> <a href="#">News</a> <a href="#">Sport</a></nav></header>
+    <main id="article"></main>
+    <script>
+      const paragraph = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ";
+      const article = document.getElementById("article");
+      for (let i = 0; i < 60; i++) {
+        const p = document.createElement("p");
+        p.textContent = paragraph.repeat(4);
+        article.append(p);
+      }
+    </script>
+  </body>
+</html>

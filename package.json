@@ -10,7 +10,8 @@
     "test:e2e": "node tests/e2e/run.mjs",
     "lint": "web-ext lint --source-dir .",
     "build": "web-ext build --source-dir . --overwrite-dest",
-    "update-autoconsent": "scripts/build-autoconsent.sh"
+    "update-autoconsent": "scripts/build-autoconsent.sh",
+    "perf": "node tests/perf/run.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",

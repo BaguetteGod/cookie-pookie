@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A page with many iframes</title>
+  </head>
+  <body>
+    <!-- Ads, embeds and widgets: the content script runs in every one of these frames. These come
+         from the same site, so Firefox loads them in one process: see iframes-cross-site.html. -->
+    <h1>A page with 20 iframes</h1>
+    <script>
+      for (let i = 0; i < 20; i++) {
+        const frame = document.createElement("iframe");
+        frame.src = `plain.html?frame=${i}`;
+        frame.width = 300;
+        frame.height = 150;
+        document.body.append(frame);
+      }
+    </script>
+  </body>
+</html>

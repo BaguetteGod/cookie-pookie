@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A page with many iframes from other sites</title>
+  </head>
+  <body>
+    <!-- Like iframes.html, but the frames come from another site (localhost vs 127.0.0.1), as ads
+         and embeds usually do. Firefox runs other sites' frames in their own processes. -->
+    <h1>A page with 20 iframes from other sites</h1>
+    <script>
+      for (let i = 0; i < 20; i++) {
+        const frame = document.createElement("iframe");
+        frame.src = `http://localhost:${location.port}/plain.html?frame=${i}`;
+        frame.width = 300;
+        frame.height = 150;
+        document.body.append(frame);
+      }
+    </script>
+  </body>
+</html>

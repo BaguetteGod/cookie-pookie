@@ -4,6 +4,7 @@ function record(choice) {
   const html = document.documentElement;
   const previous = html.dataset.clicked;
   html.dataset.clicked = previous ? `${previous},${choice}` : choice;
+  if (!previous) html.dataset.clickedAt = String(Math.round(performance.now())); // for tests/perf
 }
 
 document.addEventListener(

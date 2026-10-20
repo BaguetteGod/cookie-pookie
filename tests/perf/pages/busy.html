@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A large, changing page</title>
+  </head>
+  <body>
+    <!-- A large page that keeps changing, like an infinite feed. The add-on watches the page
+         for banners that appear late, so every change passes through its observer. The page
+         times how long its own DOM updates take; the runner compares that with and without. -->
+    <main id="feed"></main>
+    <script>
+      const feed = document.getElementById("feed");
+      const card = (i) => {
+        const item = document.createElement("article");
+        item.innerHTML = `<h2>Post ${i}</h2><p>Some text for post ${i}.</p><button>Like</button>`;
+        return item;
+      };
+      for (let i = 0; i < 3000; i++) feed.append(card(i));
+
+      window.addEventListener("load", async () => {
+        const start = performance.now();
+        for (let batch = 0; batch < 50; batch++) {
+          for (let i = 0; i < 100; i++) feed.append(card(batch * 100 + i));
+          feed.firstElementChild.remove();
+          await new Promise((r) => setTimeout(r, 0));
+        }
+        document.documentElement.dataset.updateMs = String(performance.now() - start);
+      });
+    </script>
+  </body>
+</html>

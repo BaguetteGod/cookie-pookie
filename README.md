@@ -27,6 +27,7 @@ Code layout:
 | `scripts/release.sh`, `scripts/amo-metadata.mjs` | Start a release, and write its addons.mozilla.org notes from `CHANGELOG.md`. |
 | `docs/amo-listing.md`, `scripts/amo-listing.mjs` | The addons.mozilla.org listing text in every language, and the script that sends it there. |
 | `tests/*.test.mjs` | Unit tests for the background logic, the report link and the translations. |
+| `tests/perf/` | Performance check (`npm run perf`): page-load time with and without the add-on. |
 | `tests/e2e/` | Real-Firefox tests, run with Puppeteer: test pages modelled on OneTrust, Cookiebot, Didomi, Quantcast, CookieYes, Usercentrics and Sourcepoint, plus banners for the heuristics, inside an iframe and without a reject button. Each test also checks which rule handled the banner, using a test-only content script (`probe.js`) in a copy of the add-on. |
 | `.github/workflows/` | `test.yml` runs all tests and the linter on every push and PR; `update-autoconsent.yml` updates the rules weekly; `release.yml` submits tagged releases to addons.mozilla.org; `listing.yml` updates the listing text there when `docs/amo-listing.md` changes. |
 
@@ -58,6 +59,23 @@ npx puppeteer browsers install firefox
 npm run test:e2e   # real Firefox with the add-on, against tests/e2e/fixtures
 npm run build  # zip for addons.mozilla.org, in web-ext-artifacts/
 ```
+
+## Performance
+
+`npm run perf` measures how much Cookie Pookie slows pages down. It loads local test pages in two Firefox runs, one with the add-on and one with a copy that has no content script, and compares medians. The pages time themselves and move on by themselves, because browser automation adds per-frame overhead that would roughly triple the add-on's apparent cost. It needs Firefox installed (set `FIREFOX=/path/to/firefox` if it isn't on the `PATH`) and takes about 10 minutes; `ROUNDS`, `PAGES` and `ADDON` are described at the top of `tests/perf/run.mjs`. Results vary by a few milliseconds between runs, so it isn't part of CI.
+
+Results for 0.4.0 on Firefox 158, Linux, 40 rounds per page (median extra time with the add-on):
+
+| Page | DOM ready | Fully loaded |
+| --- | --- | --- |
+| Article, no banner | +8 ms | +7 ms |
+| OneTrust banner | +1 ms | +7 ms |
+| Large page that keeps changing | +31 ms | +54 ms (its own DOM updates: +14%) |
+| 20 iframes | +21 ms | +202 ms |
+
+- On ordinary pages the add-on costs well under 10 ms.
+- Each iframe costs about 7–10 ms: roughly 1 ms for any content script, 2–3 ms to load autoconsent, and 4 ms to start the engine. It adds up on pages with many frames. Switching off heuristics or the popup observer doesn't change it, and filtering rules for a frame takes 0.1 ms; it's the engine starting in each frame. On real sites the frames also wait for the network, which hides part of it.
+- Known banners are hidden as soon as the page starts and rejected about 0.6 s later, so the banner doesn't flash while the engine works.
 
 ## Translations
 
