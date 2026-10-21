@@ -46,6 +46,10 @@ h1 {
   padding-top: 10px;
 }
 
+.cookie-status {
+  margin: 0 0 4px;
+}
+
 .note {
   margin: 0 0 2px;
   color: var(--muted);

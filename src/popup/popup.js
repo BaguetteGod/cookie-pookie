@@ -18,11 +18,11 @@ function showSiteLabel(host) {
   $("site-label").replaceChildren(before, name, after);
 }
 
-// Picks total_one, total_few, ... by the language's plural rules, falling back to total_other.
-function totalText(count) {
+// Picks e.g. total_one, total_few, ... by the language's plural rules, falling back to total_other.
+function plural(prefix, count) {
   const category = new Intl.PluralRules(language).select(count);
   const formatted = count.toLocaleString(language);
-  return t(`total_${category}`, formatted) || t("total_other", formatted);
+  return t(`${prefix}_${category}`, formatted) || t(`${prefix}_other`, formatted);
 }
 
 async function engineVersion() {
@@ -62,20 +62,31 @@ async function init() {
     host = "";
   }
 
-  const settings = await browser.storage.local.get({ enabled: true, disabledSites: [], totalHandled: 0 });
-  const { results } = await browser.runtime.sendMessage({ type: "getTabResults", tabId: tab.id });
+  const settings = await browser.storage.local.get({ enabled: true, deleteTrackingCookies: true, disabledSites: [], totalHandled: 0 });
+  const { results, cookiesDeleted } = await browser.runtime.sendMessage({ type: "getTabResults", tabId: tab.id });
+
+  // The per-site switch covers both features, so it's only greyed out when both are off.
+  const updateSiteSwitch = () => ($("site").disabled = !host || (!$("enabled").checked && !$("cookies").checked));
 
   $("enabled").checked = settings.enabled;
+  $("cookies").checked = settings.deleteTrackingCookies;
   showSiteLabel(host);
   $("site").checked = !settings.disabledSites.includes(host);
-  $("site").disabled = !host || !settings.enabled;
+  updateSiteSwitch();
   $("page-status").textContent = describe(results);
-  $("total").textContent = totalText(settings.totalHandled);
+  $("cookie-status").textContent = plural("cookiesDeleted", cookiesDeleted);
+  $("cookie-status").hidden = !host || !settings.deleteTrackingCookies;
+  $("total").textContent = plural("total", settings.totalHandled);
   $("report").disabled = !host;
 
   $("enabled").addEventListener("change", async (e) => {
     await browser.storage.local.set({ enabled: e.target.checked });
-    $("site").disabled = !host || !e.target.checked;
+    updateSiteSwitch();
+  });
+
+  $("cookies").addEventListener("change", async (e) => {
+    await browser.storage.local.set({ deleteTrackingCookies: e.target.checked });
+    updateSiteSwitch();
   });
 
   $("site").addEventListener("change", async (e) => {

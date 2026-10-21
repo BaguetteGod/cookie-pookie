@@ -13,6 +13,7 @@ const languages = fs.readdirSync(path.join(root, "_locales")).filter((lang) => l
 // Placeholders a message uses, like ["CMP"] for "Rejected cookies on the $CMP$ banner."
 const used = (text) => [...text.matchAll(/\$([A-Za-z0-9_@]+)\$/g)].map((m) => m[1].toLowerCase()).sort();
 // Plural forms like total_few are optional: languages add the ones their plural rules need.
+// Every language here has a "one" form, so that one is required.
 const isPluralForm = (key) => /_(zero|one|two|few|many)$/.test(key);
 
 {
@@ -29,16 +30,15 @@ const isPluralForm = (key) => /_(zero|one|two|few|many)$/.test(key);
   const html = read("src/popup/popup.html") + read("src/options/options.html");
   const js = read("src/popup/popup.js") + read("src/options/options.js");
   // data-i18n="key" in the HTML, t("key", ...) in the scripts, plus the two keys
-  // the script picks between and the total_<plural form> messages.
+  // the script picks between and the <prefix>_<plural form> messages.
   const keys = [
     ...[...html.matchAll(/data-i18n="(\w+)"/g)].map((m) => m[1]),
     ...[...js.matchAll(/\bt\("(\w+)"/g)].map((m) => m[1]),
     "statusHidden",
     "statusRejected",
-    "total_one",
-    "total_other"
+    ...[...js.matchAll(/\bplural\("(\w+)"/g)].flatMap((m) => [`${m[1]}_one`, `${m[1]}_other`])
   ];
-  assert.ok(js.includes('"statusHidden" : "statusRejected"') && js.includes("`total_${"), "update this test's key list");
+  assert.ok(js.includes('"statusHidden" : "statusRejected"') && js.includes("`${prefix}_${"), "update this test's key list");
   for (const key of keys) assert.ok(english[key], `popup uses missing message ${key}`);
   console.log(`ok - all ${new Set(keys).size} messages the popup and options page use exist in English`);
 }
@@ -51,7 +51,7 @@ console.log("ok - English placeholders are all defined and used");
 for (const lang of languages) {
   const translated = messages(lang);
   for (const key of Object.keys(english)) {
-    if (isPluralForm(key) && key !== "total_one") continue;
+    if (isPluralForm(key) && !key.endsWith("_one")) continue;
     assert.ok(translated[key]?.message, `${lang} is missing ${key}`);
   }
   for (const [key, { message, placeholders = {} }] of Object.entries(translated)) {

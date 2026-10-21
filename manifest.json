@@ -23,6 +23,7 @@
     }
   },
   "permissions": [
+    "cookies",
     "storage",
     "tabs",
     "scripting"
@@ -33,6 +34,7 @@
   "background": {
     "scripts": [
       "vendor/autoconsent/background-lib.js",
+      "src/trackers.js",
       "src/background.js"
     ]
   },

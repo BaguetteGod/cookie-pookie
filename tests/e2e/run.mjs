@@ -194,6 +194,14 @@ try {
     });
   }
 
+  await test("deletes tracking cookies and keeps the others", async (page) => {
+    await page.goto(`${base}/tracking-cookies.html`);
+    const names = () => page.evaluate(() => document.cookie.split("; ").map((c) => c.split("=")[0]).sort().join(" "));
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline && /_ga|_fbp/.test(await names())) await new Promise((r) => setTimeout(r, 100));
+    assert.equal(await names(), "OptanonConsent PHPSESSID");
+  });
+
   await test("never clicks accept when there is no reject option", async (page) => {
     await page.goto(`${base}/accept-only.html`);
     const clicked = await clicksIn(page.mainFrame(), 8000);

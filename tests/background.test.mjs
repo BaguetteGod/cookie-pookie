@@ -15,9 +15,13 @@ function makeBrowser() {
   const sent = [];
   const badges = {};
   const executed = [];
+  const removedCookies = [];
+  const openTabs = [];
   let onMessage = null;
+  let onCookieChanged = null;
   const browser = {
     storage: {
+      onChanged: { addListener() {} },
       local: {
         async get(keys) {
           const out = {};
@@ -31,11 +35,25 @@ function makeBrowser() {
     },
     runtime: {
       getURL: (p) => "file://" + path.join(root, p),
-      onMessage: { addListener: (fn) => (onMessage = fn) }
+      onMessage: { addListener: (fn) => (onMessage = fn) },
+      onInstalled: { addListener() {} }
+    },
+    cookies: {
+      async remove(details) {
+        removedCookies.push(details);
+        return details;
+      },
+      async getAllCookieStores() {
+        return [];
+      },
+      onChanged: { addListener: (fn) => (onCookieChanged = fn) }
     },
     tabs: {
       async sendMessage(tabId, message, options) {
         sent.push({ tabId, message, frameId: options && options.frameId });
+      },
+      async query() {
+        return openTabs;
       },
       onUpdated: { addListener() {} },
       onRemoved: { addListener() {} }
@@ -51,7 +69,17 @@ function makeBrowser() {
       }
     }
   };
-  return { browser, storage, sent, badges, executed, send: (m, s) => onMessage(m, s) };
+  return {
+    browser,
+    storage,
+    sent,
+    badges,
+    executed,
+    removedCookies,
+    openTabs,
+    send: (m, s) => onMessage(m, s),
+    setCookie: (cookie) => onCookieChanged({ removed: false, cookie: { path: "/", storeId: "firefox-default", firstPartyDomain: "", partitionKey: null, ...cookie } })
+  };
 }
 
 function loadBackground(fake) {
@@ -180,6 +208,60 @@ await test("handled banners update the badge, popup data and total", async () =>
     { cmp: "some-banner", cosmetic: true }
   ]);
   assert.ok(fake.storage.totalHandled >= 1);
+});
+
+await test("tracking cookies are deleted from their own store and partition, others are kept", async () => {
+  const fake = makeBrowser();
+  loadBackground(fake);
+  fake.setCookie({ name: "_ga", domain: ".shop.example" });
+  fake.setCookie({ name: "_fbp", domain: ".cdn.example", storeId: "firefox-container-2", partitionKey: { topLevelSite: "https://shop.example" } });
+  fake.setCookie({ name: "PHPSESSID", domain: "shop.example" });
+  fake.setCookie({ name: "OptanonConsent", domain: ".shop.example" });
+  await tick();
+  assert.deepEqual(JSON.parse(JSON.stringify(fake.removedCookies)), [
+    { url: "https://shop.example/", name: "_ga", storeId: "firefox-default", firstPartyDomain: "" },
+    {
+      url: "https://cdn.example/",
+      name: "_fbp",
+      storeId: "firefox-container-2",
+      firstPartyDomain: "",
+      partitionKey: { topLevelSite: "https://shop.example" }
+    }
+  ]);
+});
+
+await test("cookie deletion follows its switch and the per-site switch", async () => {
+  const fake = makeBrowser();
+  loadBackground(fake);
+  fake.storage.disabledSites = ["www.shop.example"];
+  fake.setCookie({ name: "_ga", domain: ".shop.example" });
+  fake.setCookie({ name: "_ga", domain: ".tracker.example", partitionKey: { topLevelSite: "https://shop.example" } });
+  await tick();
+  assert.equal(fake.removedCookies.length, 0, "cookies on a site that's switched off should stay");
+
+  fake.storage.disabledSites = [];
+  fake.storage.deleteTrackingCookies = false;
+  fake.setCookie({ name: "_ga", domain: ".shop.example" });
+  await tick();
+  assert.equal(fake.removedCookies.length, 0, "the switch should turn deletion off");
+
+  fake.storage.enabled = false;
+  fake.storage.deleteTrackingCookies = true;
+  fake.setCookie({ name: "_ga", domain: ".shop.example" });
+  await tick();
+  assert.equal(fake.removedCookies.length, 1, "deletion doesn't depend on the banner switch");
+});
+
+await test("the popup gets each deleted cookie once per page, for the tabs on its site", async () => {
+  const fake = makeBrowser();
+  loadBackground(fake);
+  fake.openTabs.push(tab("https://www.shop.example/cart", 7), tab("https://other.example/", 8));
+  fake.setCookie({ name: "_ga", domain: ".shop.example" });
+  fake.setCookie({ name: "_ga", domain: ".shop.example" }); // set again by the script
+  fake.setCookie({ name: "_hjSession_123", domain: "www.shop.example" });
+  await tick();
+  assert.equal((await fake.send({ type: "getTabResults", tabId: 7 }, {})).cookiesDeleted, 2);
+  assert.equal((await fake.send({ type: "getTabResults", tabId: 8 }, {})).cookiesDeleted, 0);
 });
 
 console.log(`\n${passed} tests passed`);

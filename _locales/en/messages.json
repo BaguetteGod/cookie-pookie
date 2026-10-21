@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Automatically rejects cookie consent banners so you never have to click them again.",
+    "message": "Automatically rejects cookie consent banners so you never have to click them again, and deletes tracking cookies.",
     "description": "Add-on description in the Add-ons Manager and on addons.mozilla.org."
   },
   "permissionWarning": {
@@ -14,6 +14,10 @@
   "enabledLabel": {
     "message": "Reject cookie banners",
     "description": "Label of the switch that turns Cookie Pookie on or off everywhere."
+  },
+  "cookiesLabel": {
+    "message": "Delete tracking cookies",
+    "description": "Label of the switch that turns deleting tracking cookies on or off everywhere."
   },
   "siteLabel": {
     "message": "On $HOST$",
@@ -46,6 +50,24 @@
     "description": "Popup status after hiding a banner that had no reject button. $CMP$ is the consent platform's name.",
     "placeholders": {
       "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "cookiesDeleted_one": {
+    "message": "$COUNT$ tracking cookie deleted on this page.",
+    "description": "Popup status: tracking cookies deleted on the current page, for numbers in the 'one' plural category. $COUNT$ is the number.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "cookiesDeleted_other": {
+    "message": "$COUNT$ tracking cookies deleted on this page.",
+    "description": "Popup status: tracking cookies deleted on the current page, for all other numbers (including 0). Add cookiesDeleted_few etc. for languages that need them.",
+    "placeholders": {
+      "count": {
         "content": "$1"
       }
     }

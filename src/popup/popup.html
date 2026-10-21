@@ -24,11 +24,17 @@
     </label>
 
     <label class="row">
+      <span data-i18n="cookiesLabel">Delete tracking cookies</span>
+      <input type="checkbox" id="cookies" />
+    </label>
+
+    <label class="row">
       <span id="site-label">On <strong>this page</strong></span>
       <input type="checkbox" id="site" />
     </label>
 
     <p class="stats" id="page-status" data-i18n="statusNone">No cookie banner handled on this page.</p>
+    <p class="cookie-status" id="cookie-status" hidden></p>
     <p class="note" id="total"></p>
     <p class="note" data-i18n="reloadNote">Switch changes apply when you reload the page.</p>
 

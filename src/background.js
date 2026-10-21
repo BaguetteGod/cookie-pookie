@@ -1,19 +1,22 @@
 /*
  * Cookie Pookie — background script.
  * Serves autoconsent's rules and settings to each frame, runs the engine's
- * main-world snippets, and keeps count of handled banners.
+ * main-world snippets, keeps count of handled banners, and deletes tracking
+ * cookies as soon as they're set.
  *
  * vendor/autoconsent/background-lib.js is loaded first and provides
  * CookiePookieAutoConsentLib = { snippets, filterCompactRules }.
+ * src/trackers.js provides isTrackingCookie and the cookie helpers.
  *
  * Storage (browser.storage.local):
- *   enabled:       boolean, global on/off (default true)
- *   disabledSites: string[], hostnames where Cookie Pookie stays out
- *   totalHandled:  number, banners handled since install
+ *   enabled:               boolean, rejecting banners on/off (default true)
+ *   deleteTrackingCookies: boolean, deleting tracking cookies on/off (default true)
+ *   disabledSites:         string[], hostnames where Cookie Pookie stays out (both features)
+ *   totalHandled:          number, banners handled since install
  */
-/* global CookiePookieAutoConsentLib */
+/* global CookiePookieAutoConsentLib, isTrackingCookie, hostsRelated, hostOf, cookieHosts, cookieUrl */
 
-const DEFAULTS = { enabled: true, disabledSites: [], totalHandled: 0 };
+const DEFAULTS = { enabled: true, deleteTrackingCookies: true, disabledSites: [], totalHandled: 0 };
 
 // Settings passed to the autoconsent engine. Anything left out uses the library default.
 const ENGINE_CONFIG = {
@@ -29,14 +32,6 @@ const ENGINE_CONFIG = {
 
 async function getSettings() {
   return { ...DEFAULTS, ...(await browser.storage.local.get(Object.keys(DEFAULTS))) };
-}
-
-function hostOf(url) {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return "";
-  }
 }
 
 // The compact rules are ~360 KB, so load them once per background lifetime.
@@ -112,9 +107,68 @@ async function handleDone(message, sender) {
   await browser.storage.local.set({ totalHandled: totalHandled + 1 });
 }
 
+// Tracking cookies deleted per tab since its last page load, as "domain name"
+// keys. Scripts often set the same cookie again and again, so each counts once.
+const tabCookies = new Map();
+
+async function countDeleted(cookie) {
+  const hosts = cookieHosts(cookie);
+  const key = `${cookie.domain} ${cookie.name}`;
+  for (const tab of await browser.tabs.query({})) {
+    const tabHost = hostOf(tab.url);
+    if (!hosts.some((host) => hostsRelated(host, tabHost))) continue;
+    if (!tabCookies.has(tab.id)) tabCookies.set(tab.id, new Set());
+    tabCookies.get(tab.id).add(key);
+  }
+}
+
+// Deletes the cookie if it's a tracking cookie and Cookie Pookie isn't off for its site.
+async function deleteIfTracking(cookie) {
+  if (!isTrackingCookie(cookie.name)) return;
+  const { deleteTrackingCookies, disabledSites } = await getSettings();
+  if (!deleteTrackingCookies) return;
+  const hosts = cookieHosts(cookie);
+  if (disabledSites.some((site) => hosts.some((host) => hostsRelated(host, site)))) return;
+  // The cookie's own store and partition, or Firefox won't find cookies kept per site or per container.
+  const removed = await browser.cookies.remove({
+    url: cookieUrl(cookie),
+    name: cookie.name,
+    storeId: cookie.storeId,
+    firstPartyDomain: cookie.firstPartyDomain,
+    partitionKey: cookie.partitionKey ?? undefined
+  });
+  if (removed) await countDeleted(cookie);
+}
+
+// Deletes tracking cookies already in the browser, e.g. from before install or
+// from while the switch was off. Covers every container, partition and, if allowed, private windows.
+async function sweepCookies() {
+  for (const store of await browser.cookies.getAllCookieStores()) {
+    const cookies = await browser.cookies.getAll({ storeId: store.id, firstPartyDomain: null, partitionKey: {} });
+    for (const cookie of cookies) await deleteIfTracking(cookie);
+  }
+}
+
+browser.cookies.onChanged.addListener(({ removed, cookie }) => {
+  if (!removed) deleteIfTracking(cookie).catch((e) => console.error("[Cookie Pookie] cookie removal failed", e));
+});
+
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.deleteTrackingCookies?.newValue) {
+    sweepCookies().catch((e) => console.error("[Cookie Pookie] cookie sweep failed", e));
+  }
+});
+
+browser.runtime.onInstalled.addListener(() => {
+  sweepCookies().catch((e) => console.error("[Cookie Pookie] cookie sweep failed", e));
+});
+
 browser.runtime.onMessage.addListener((message, sender) => {
   if (message.type === "getTabResults") {
-    return Promise.resolve({ results: tabResults.get(message.tabId) || [] });
+    return Promise.resolve({
+      results: tabResults.get(message.tabId) || [],
+      cookiesDeleted: tabCookies.get(message.tabId)?.size || 0
+    });
   }
 
   // Everything below comes from the autoconsent engine in a content script.
@@ -141,8 +195,12 @@ browser.runtime.onMessage.addListener((message, sender) => {
 browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === "loading") {
     tabResults.delete(tabId);
+    tabCookies.delete(tabId);
     setBadge(tabId);
   }
 });
 
-browser.tabs.onRemoved.addListener((tabId) => tabResults.delete(tabId));
+browser.tabs.onRemoved.addListener((tabId) => {
+  tabResults.delete(tabId);
+  tabCookies.delete(tabId);
+});

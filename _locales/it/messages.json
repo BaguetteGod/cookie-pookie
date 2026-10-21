@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Rifiuta automaticamente i banner dei cookie, così non dovrai più cliccarli."
+    "message": "Rifiuta automaticamente i banner dei cookie, così non dovrai più cliccarli, ed elimina i cookie di tracciamento."
   },
   "permissionWarning": {
     "message": "Cookie Pookie ha bisogno dell’accesso a tutti i siti web per rifiutare i loro banner dei cookie."
@@ -10,6 +10,9 @@
   },
   "enabledLabel": {
     "message": "Rifiuta i banner dei cookie"
+  },
+  "cookiesLabel": {
+    "message": "Elimina i cookie di tracciamento"
   },
   "siteLabel": {
     "message": "Su $HOST$",
@@ -37,6 +40,22 @@
     "message": "Banner $CMP$ nascosto (non offriva un’opzione di rifiuto).",
     "placeholders": {
       "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "cookiesDeleted_one": {
+    "message": "$COUNT$ cookie di tracciamento eliminato in questa pagina.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "cookiesDeleted_other": {
+    "message": "$COUNT$ cookie di tracciamento eliminati in questa pagina.",
+    "placeholders": {
+      "count": {
         "content": "$1"
       }
     }

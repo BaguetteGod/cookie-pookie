@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Rechaza automáticamente los avisos de cookies para que no tengas que volver a hacer clic en ellos."
+    "message": "Rechaza automáticamente los avisos de cookies para que no tengas que volver a hacer clic en ellos, y elimina las cookies de seguimiento."
   },
   "permissionWarning": {
     "message": "Cookie Pookie necesita acceso a todos los sitios web para rechazar sus avisos de cookies."
@@ -10,6 +10,9 @@
   },
   "enabledLabel": {
     "message": "Rechazar avisos de cookies"
+  },
+  "cookiesLabel": {
+    "message": "Eliminar cookies de seguimiento"
   },
   "siteLabel": {
     "message": "En $HOST$",
@@ -37,6 +40,22 @@
     "message": "Se ocultó el aviso de $CMP$ (no tenía opción para rechazar).",
     "placeholders": {
       "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "cookiesDeleted_one": {
+    "message": "$COUNT$ cookie de seguimiento eliminada en esta página.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "cookiesDeleted_other": {
+    "message": "$COUNT$ cookies de seguimiento eliminadas en esta página.",
+    "placeholders": {
+      "count": {
         "content": "$1"
       }
     }

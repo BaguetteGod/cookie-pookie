@@ -1,6 +1,6 @@
 # <img src="icons/icon.svg" alt="" width="40" height="40" align="absmiddle"> Cookie Pookie
 
-A Firefox add-on that automatically rejects cookie consent banners.
+A Firefox add-on that automatically rejects cookie consent banners and deletes tracking cookies.
 
 ## How it works
 
@@ -11,13 +11,26 @@ Cookie Pookie runs DuckDuckGo's open-source [autoconsent](https://github.com/duc
 - **Hides** banners that offer no reject option at all, instead of clicking anything.
 - **Pre-hides** known banners while it works, so you rarely see them flash.
 
+### Tracking cookies
+
+Cookie Pookie also deletes analytics and advertising cookies the moment a site sets them: Google Analytics and Ads (`_ga`, `_gid`, `_gcl_*`, …), the Meta Pixel (`_fbp`, `_fbc`), Microsoft Advertising and Clarity, Hotjar, TikTok, Pinterest, Reddit, Snapchat, HubSpot, Matomo, Yandex Metrica, Criteo, Segment, Mixpanel and Amplitude. The full list is in `src/trackers.js`.
+
+- It looks at cookie names, not domains. Firefox already blocks or partitions third-party tracker cookies; the ones that get through are set by tracking scripts on the site's own domain.
+- It deletes them wherever they're stored: every container, cookies Firefox keeps separately for each site, and private windows if the add-on is allowed there. Cookies from before install, or from while the switch was off, are deleted when the switch is turned on (and on install or update).
+- It never deletes consent cookies (they hold the "reject" Cookie Pookie just clicked), opt-out cookies, or bot-protection cookies such as Cloudflare's, which would mean more CAPTCHAs.
+- It leaves cookies alone when deleting them would change what you see: chat widgets (HubSpot's `hubspotutk`, Intercom), A/B tests (Optimizely, VWO) and newsletter popups (Klaviyo).
+- Scripts often set the same cookie again on the next page, and it's deleted again. The popup counts each cookie once per page.
+
+It has its own switch in the popup, on by default. The per-site switch turns off both features for that site.
+
 Code layout:
 
 | Path | What it does |
 | --- | --- |
 | `src/content/content.js` | Starts the engine in every frame and relays its messages. |
-| `src/background.js` | Gives each frame its rules and settings, runs the engine's main-world snippets, applies the on/off switches and counts handled banners. |
-| `src/popup/` | Toolbar popup: global switch, per-site switch, what happened on this page, "Report a broken site", a link to the options page, and a prompt when site access is missing. |
+| `src/background.js` | Gives each frame its rules and settings, runs the engine's main-world snippets, applies the on/off switches, counts handled banners and deletes tracking cookies. |
+| `src/trackers.js` | Which cookies count as tracking cookies, and which are never deleted. |
+| `src/popup/` | Toolbar popup: switches for banners and tracking cookies, per-site switch, what happened on this page, "Report a broken site", a link to the options page, and a prompt when site access is missing. |
 | `src/options/` | Options page (Add-ons Manager → Cookie Pookie → Preferences, or **Manage sites** in the popup): lists the sites where Cookie Pookie is off, each with a button to turn it back on. |
 | `src/report.js` | Builds the pre-filled GitHub issue link for broken-site reports. |
 | `src/theme.css`, `src/i18n.js` | Colours (light and dark) and translation helpers shared by the popup and the options page. |
@@ -26,9 +39,9 @@ Code layout:
 | `scripts/build-autoconsent.sh` | Rebuilds `vendor/autoconsent/` from an autoconsent release. |
 | `scripts/release.sh`, `scripts/amo-metadata.mjs` | Start a release, and write its addons.mozilla.org notes from `CHANGELOG.md`. |
 | `docs/amo-listing.md`, `scripts/amo-listing.mjs` | The addons.mozilla.org listing text in every language, and the script that sends it there. |
-| `tests/*.test.mjs` | Unit tests for the background logic, the report link and the translations. |
+| `tests/*.test.mjs` | Unit tests for the background logic, the tracking cookie list, the report link and the translations. |
 | `tests/perf/` | Performance check (`npm run perf`): page-load time with and without the add-on. |
-| `tests/e2e/` | Real-Firefox tests, run with Puppeteer: test pages modelled on OneTrust, Cookiebot, Didomi, Quantcast, CookieYes, Usercentrics and Sourcepoint, plus banners for the heuristics, inside an iframe and without a reject button. Each test also checks which rule handled the banner, using a test-only content script (`probe.js`) in a copy of the add-on. |
+| `tests/e2e/` | Real-Firefox tests, run with Puppeteer: test pages modelled on OneTrust, Cookiebot, Didomi, Quantcast, CookieYes, Usercentrics and Sourcepoint, plus banners for the heuristics, inside an iframe and without a reject button, and a page that sets tracking cookies. Each test also checks which rule handled the banner, using a test-only content script (`probe.js`) in a copy of the add-on. |
 | `.github/workflows/` | `test.yml` runs all tests and the linter on every push and PR; `update-autoconsent.yml` updates the rules weekly; `release.yml` submits tagged releases to addons.mozilla.org; `listing.yml` updates the listing text there when `docs/amo-listing.md` changes. |
 
 The per-site switch is decided by the tab's top-level site, so it also covers consent banners loaded in iframes.

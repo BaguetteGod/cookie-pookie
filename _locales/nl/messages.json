@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Weigert cookiebanners automatisch, zodat je er nooit meer op hoeft te klikken."
+    "message": "Weigert cookiebanners automatisch, zodat je er nooit meer op hoeft te klikken, en verwijdert trackingcookies."
   },
   "permissionWarning": {
     "message": "Cookie Pookie heeft toegang tot alle websites nodig om hun cookiebanners te weigeren."
@@ -10,6 +10,9 @@
   },
   "enabledLabel": {
     "message": "Cookiebanners weigeren"
+  },
+  "cookiesLabel": {
+    "message": "Trackingcookies verwijderen"
   },
   "siteLabel": {
     "message": "Op $HOST$",
@@ -37,6 +40,22 @@
     "message": "$CMP$-banner verborgen (er was geen optie om te weigeren).",
     "placeholders": {
       "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "cookiesDeleted_one": {
+    "message": "$COUNT$ trackingcookie verwijderd op deze pagina.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "cookiesDeleted_other": {
+    "message": "$COUNT$ trackingcookies verwijderd op deze pagina.",
+    "placeholders": {
+      "count": {
         "content": "$1"
       }
     }

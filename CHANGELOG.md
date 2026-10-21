@@ -2,6 +2,11 @@
 
 Each `## <version>` section becomes that version's release notes on addons.mozilla.org and GitHub, so write it for users. `scripts/release.sh` won't release a version without one.
 
+## 0.5.0
+
+- Deletes tracking cookies (Google Analytics, Meta Pixel, Hotjar and others) as soon as a site sets them, with its own switch in the popup. Consent, login and security cookies are never touched.
+- The per-site switch now covers both rejecting banners and deleting cookies
+
 ## 0.4.1
 
 - Faster on pages with many hidden iframes, such as tracking pixels

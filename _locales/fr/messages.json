@@ -1,6 +1,6 @@
 {
   "extensionDescription": {
-    "message": "Refuse automatiquement les bannières de cookies pour que vous n’ayez plus jamais à cliquer dessus."
+    "message": "Refuse automatiquement les bannières de cookies pour que vous n’ayez plus jamais à cliquer dessus, et supprime les cookies de suivi."
   },
   "permissionWarning": {
     "message": "Cookie Pookie a besoin d’accéder à tous les sites web pour refuser leurs bannières de cookies."
@@ -10,6 +10,9 @@
   },
   "enabledLabel": {
     "message": "Refuser les bannières de cookies"
+  },
+  "cookiesLabel": {
+    "message": "Supprimer les cookies de suivi"
   },
   "siteLabel": {
     "message": "Sur $HOST$",
@@ -37,6 +40,22 @@
     "message": "Bannière $CMP$ masquée (elle n’offrait pas d’option de refus).",
     "placeholders": {
       "cmp": {
+        "content": "$1"
+      }
+    }
+  },
+  "cookiesDeleted_one": {
+    "message": "$COUNT$ cookie de suivi supprimé sur cette page.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "cookiesDeleted_other": {
+    "message": "$COUNT$ cookies de suivi supprimés sur cette page.",
+    "placeholders": {
+      "count": {
         "content": "$1"
       }
     }

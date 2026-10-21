@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Tracking cookies</title>
+    <script>
+      // What analytics scripts and the site itself would set. Cookie Pookie
+      // should delete the first two and keep the rest.
+      document.cookie = "_ga=GA1.1.123456789.1700000000; path=/";
+      document.cookie = "_fbp=fb.1.1700000000.123456789; path=/";
+      document.cookie = "PHPSESSID=abc123; path=/";
+      document.cookie = "OptanonConsent=isGpcEnabled=0&groups=C0001:1; path=/";
+    </script>
+  </head>
+  <body>
+    <h1>A page with analytics</h1>
+  </body>
+</html>
