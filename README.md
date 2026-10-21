@@ -1,4 +1,4 @@
-# Cookie Pookie 🍪
+# <img src="icons/icon.svg" alt="" width="40" height="40" align="absmiddle"> Cookie Pookie
 
 A Firefox add-on that automatically rejects cookie consent banners.
 
