@@ -38,8 +38,9 @@ Code layout:
 | `vendor/autoconsent/` | Built copy of autoconsent and its rules (MPL-2.0). Don't edit by hand. |
 | `scripts/build-autoconsent.sh` | Rebuilds `vendor/autoconsent/` from an autoconsent release. |
 | `scripts/release.sh`, `scripts/amo-metadata.mjs` | Start a release, and write its addons.mozilla.org notes from `CHANGELOG.md`. |
+| `scripts/amo-api.mjs`, `scripts/amo-source.mjs` | The addons.mozilla.org API client (retries when throttled), and the release step that uploads source code `web-ext sign` couldn't. |
 | `docs/amo-listing.md`, `scripts/amo-listing.mjs` | The addons.mozilla.org listing text in every language, and the script that sends it there. |
-| `tests/*.test.mjs` | Unit tests for the background logic, the tracking cookie list, the report link and the translations. |
+| `tests/*.test.mjs` | Unit tests for the background logic, the tracking cookie list, the report link, the translations and the AMO API client's retries. |
 | `tests/perf/` | Performance check (`npm run perf`): page-load time with and without the add-on. |
 | `tests/e2e/` | Real-Firefox tests, run with Puppeteer: test pages modelled on OneTrust, Cookiebot, Didomi, Quantcast, CookieYes, Usercentrics and Sourcepoint, plus banners for the heuristics, inside an iframe and without a reject button, and a page that sets tracking cookies. Each test also checks which rule handled the banner, using a test-only content script (`probe.js`) in a copy of the add-on. |
 | `.github/workflows/` | `test.yml` runs all tests and the linter on every push and PR; `update-autoconsent.yml` updates the rules weekly; `release.yml` submits tagged releases to addons.mozilla.org; `listing.yml` updates the listing text there when `docs/amo-listing.md` changes. |
@@ -125,6 +126,8 @@ Releases go to [addons.mozilla.org](https://addons.mozilla.org) through the **Re
 1. Add a `## 0.4.0` section to [CHANGELOG.md](CHANGELOG.md) with the release notes, written for users, and commit it.
 2. Run `scripts/release.sh 0.4.0`. It checks that `master` is clean and in sync, bumps the version in `manifest.json`, `package.json` and `package-lock.json`, commits, tags `v0.4.0` and pushes.
 3. The tag starts the Release workflow. It checks that `vendor/autoconsent/` rebuilds byte for byte, runs all tests and the linter, submits the version to addons.mozilla.org with its source code, release notes and reviewer notes (written by `scripts/amo-metadata.mjs`), and publishes a GitHub release with the same files. Mozilla emails you when the review is done.
+
+addons.mozilla.org throttles bursts of API calls. The Release and **Update AMO listing** workflows share a concurrency group, so they never call it at the same time. If `web-ext sign` still fails, the workflow checks what reached addons.mozilla.org. If the version isn't there, it submits again, up to three times. If the version is there without its source code, `scripts/amo-source.mjs` uploads the source. All AMO API scripts wait out throttling (HTTP 429) as long as AMO asks and retry. Re-running a failed Release workflow is safe for the same reason: a version that is already on addons.mozilla.org just gets its missing source code and its GitHub release.
 
 A merged autoconsent update only reaches users once it's released, so release after merging one.
 

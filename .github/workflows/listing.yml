@@ -11,8 +11,9 @@ on:
 permissions:
   contents: read
 
+# Shared with release.yml so the two never call the AMO API at the same time.
 concurrency:
-  group: amo-listing
+  group: amo-api
   cancel-in-progress: false
 
 jobs:

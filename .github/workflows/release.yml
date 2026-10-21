@@ -10,8 +10,10 @@ on:
 permissions:
   contents: write # to create the GitHub release
 
+# Shared with listing.yml: scripts/release.sh pushes master and the tag
+# together, and AMO throttles requests that arrive in the same minute.
 concurrency:
-  group: release
+  group: amo-api
   cancel-in-progress: false
 
 jobs:
@@ -82,10 +84,25 @@ jobs:
             echo "::error::Add the AMO_JWT_ISSUER and AMO_JWT_SECRET repository secrets (see README, Releasing)."
             exit 1
           fi
+          source="web-ext-artifacts/cookie_pookie-${{ steps.version.outputs.version }}-source.zip"
           # Submits the version for review and returns; Mozilla emails when it's approved.
-          npx web-ext sign --channel=listed --approval-timeout=0 \
-            --amo-metadata=web-ext-artifacts/amo-metadata.json \
-            --upload-source-code="web-ext-artifacts/cookie_pookie-${{ steps.version.outputs.version }}-source.zip"
+          # web-ext doesn't retry when AMO throttles it (HTTP 429). If it failed before
+          # creating the version, submit again; if after, only the source upload is left,
+          # which scripts/amo-source.mjs finishes (with its own retries).
+          for attempt in 1 2 3; do
+            if npx web-ext sign --channel=listed --approval-timeout=0 \
+                --amo-metadata=web-ext-artifacts/amo-metadata.json \
+                --upload-source-code="$source"; then
+              exit 0
+            fi
+            echo "::warning::web-ext sign failed (attempt $attempt); checking what reached addons.mozilla.org."
+            status=0
+            node scripts/amo-source.mjs "${{ steps.version.outputs.version }}" "$source" || status=$?
+            [ "$status" -eq 0 ] && exit 0
+            [ "$status" -eq 2 ] || exit 1
+            sleep 60
+          done
+          exit 1
 
       - name: GitHub release
         env:

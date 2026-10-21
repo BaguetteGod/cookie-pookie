@@ -5,13 +5,12 @@
 //   AMO_JWT_ISSUER=... AMO_JWT_SECRET=... node scripts/amo-listing.mjs
 //
 // Languages left out of docs/amo-listing.md keep their current text on AMO.
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { API, amoRequest } from "./amo-api.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const API = "https://addons.mozilla.org/api/v5/addons/addon";
 const FIELDS = { Summary: "summary", Description: "description", "Privacy policy": "privacy_policy" };
 
 // Each "## Language (locale)" section holds "**Field**" headings, each followed by a ```text block.
@@ -33,24 +32,8 @@ function parseListing(markdown) {
   return listing;
 }
 
-// AMO's API takes a short-lived JWT signed with the API secret.
-function token(issuer, secret) {
-  const now = Math.floor(Date.now() / 1000);
-  const encode = (data) => Buffer.from(JSON.stringify(data)).toString("base64url");
-  const unsigned = `${encode({ alg: "HS256", typ: "JWT" })}.${encode({ iss: issuer, jti: crypto.randomUUID(), iat: now, exp: now + 60 })}`;
-  return `${unsigned}.${crypto.createHmac("sha256", secret).update(unsigned).digest("base64url")}`;
-}
-
-async function patch(url, body) {
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      Authorization: `JWT ${token(process.env.AMO_JWT_ISSUER, process.env.AMO_JWT_SECRET)}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body)
-  });
-  if (!response.ok) throw new Error(`PATCH ${url} failed: ${response.status} ${await response.text()}`);
+function patch(url, body) {
+  return amoRequest("PATCH", url, { issuer: process.env.AMO_JWT_ISSUER, secret: process.env.AMO_JWT_SECRET, makeBody: () => body });
 }
 
 const listing = parseListing(fs.readFileSync(path.join(root, "docs/amo-listing.md"), "utf8"));
