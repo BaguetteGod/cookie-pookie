@@ -1,4 +1,4 @@
-/* Built from DuckDuckGo autoconsent v16.57.0 (npm @duckduckgo/autoconsent).
+/* Built from DuckDuckGo autoconsent v16.61.0 (npm @duckduckgo/autoconsent).
  * Licensed under the Mozilla Public License 2.0, see LICENSE in this folder.
  * Source: https://github.com/duckduckgo/autoconsent */
 "use strict";
@@ -122,6 +122,27 @@
     EVAL_COOKIEFIRST_1: () => document.querySelectorAll("button[data-cookiefirst-accent-color=true][role=checkbox]:not([disabled])").forEach((i) => i.getAttribute("aria-checked") === "true" && i.click()) || true,
     EVAL_COOKIEINFORMATION_0: () => CookieInformation.declineAllCategories() || true,
     EVAL_COOKIEINFORMATION_1: () => CookieInformation.submitAllCategories() || true,
+    // banner button order and meaning are configurable per site, so set the consent levels through the public API
+    EVAL_COOKIEREPORTS_OPT_OUT: () => {
+      const cr = window._cookiereports;
+      if (typeof cr?.saveConsent !== "function") return false;
+      cr.saveConsent({ 1: true, 2: false, 3: false, 4: false, 5: false });
+      cr.processConsent("banner", { trigger: "ok" });
+      cr.hideBanner();
+      return true;
+    },
+    EVAL_COOKIEREPORTS_OPT_IN: () => {
+      const cr = window._cookiereports;
+      if (typeof cr?.saveConsent !== "function") return false;
+      cr.saveConsent({ 1: true, 2: true, 3: true, 4: true, 5: true });
+      cr.processConsent("banner", { trigger: "ok" });
+      cr.hideBanner();
+      return true;
+    },
+    EVAL_COOKIEREPORTS_TEST: () => {
+      const levels = window._cookiereports?.loadConsent?.();
+      return !!levels && Object.keys(levels).length > 0 && Object.values(levels).every((v) => !v);
+    },
     // turn the single-button form into a decline submission, same fields as the CMP's own decline form
     EVAL_EE_CONSENT_DECLINE_0: () => document.querySelectorAll('#cookieConsentFormAccept input[name^="ee:cookies_"]').forEach((i) => i.value = "n") || true,
     EVAL_ETSY_0: () => document.querySelectorAll(".gdpr-overlay-body input").forEach((toggle) => {
