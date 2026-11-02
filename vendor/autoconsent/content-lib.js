@@ -1,4 +1,4 @@
-/* Built from DuckDuckGo autoconsent v16.57.0 (npm @duckduckgo/autoconsent).
+/* Built from DuckDuckGo autoconsent v17.2.0 (npm @duckduckgo/autoconsent).
  * Licensed under the Mozilla Public License 2.0, see LICENSE in this folder.
  * Source: https://github.com/duckduckgo/autoconsent */
 "use strict";
@@ -162,6 +162,7 @@
       },
       performanceLoggingEnabled: false,
       heuristicPopupSearchTimeout: 100,
+      enableHeuristicHitTest: false,
       heuristicMode: "off"
       // heuristic disabled by default
     };
@@ -347,6 +348,27 @@
     EVAL_COOKIEFIRST_1: () => document.querySelectorAll("button[data-cookiefirst-accent-color=true][role=checkbox]:not([disabled])").forEach((i) => i.getAttribute("aria-checked") === "true" && i.click()) || true,
     EVAL_COOKIEINFORMATION_0: () => CookieInformation.declineAllCategories() || true,
     EVAL_COOKIEINFORMATION_1: () => CookieInformation.submitAllCategories() || true,
+    // banner button order and meaning are configurable per site, so set the consent levels through the public API
+    EVAL_COOKIEREPORTS_OPT_OUT: () => {
+      const cr = window._cookiereports;
+      if (typeof cr?.saveConsent !== "function") return false;
+      cr.saveConsent({ 1: true, 2: false, 3: false, 4: false, 5: false });
+      cr.processConsent("banner", { trigger: "ok" });
+      cr.hideBanner();
+      return true;
+    },
+    EVAL_COOKIEREPORTS_OPT_IN: () => {
+      const cr = window._cookiereports;
+      if (typeof cr?.saveConsent !== "function") return false;
+      cr.saveConsent({ 1: true, 2: true, 3: true, 4: true, 5: true });
+      cr.processConsent("banner", { trigger: "ok" });
+      cr.hideBanner();
+      return true;
+    },
+    EVAL_COOKIEREPORTS_TEST: () => {
+      const levels = window._cookiereports?.loadConsent?.();
+      return !!levels && Object.keys(levels).length > 0 && Object.values(levels).every((v) => !v);
+    },
     // turn the single-button form into a decline submission, same fields as the CMP's own decline form
     EVAL_EE_CONSENT_DECLINE_0: () => document.querySelectorAll('#cookieConsentFormAccept input[name^="ee:cookies_"]').forEach((i) => i.value = "n") || true,
     EVAL_ETSY_0: () => document.querySelectorAll(".gdpr-overlay-body input").forEach((toggle) => {
@@ -452,8 +474,8 @@
     // "only necessary" is probably too broad
     /(?:by continuing.{0,100}cookie)|(?:cookie.{0,100}by continuing)/gi,
     /(?:by continuing.{0,100}privacy)|(?:privacy.{0,100}by continuing)/gi,
-    // a single qualifier is common: "optional", "essential", "necessary", "analytics", ...
-    /we (?:use|serve)(?: \w+)? cookies/gi,
+    // up to two qualifiers are common: "optional", "essential", "analytics", "google analytics", "third party", ...
+    /we (?:use|serve)(?: \w+){0,2} cookies/gi,
     /we are using cookies/gi,
     /use of cookies/gi,
     /website uses cookies to enhance your browsing experience/gi,
@@ -597,10 +619,23 @@
     // "файлы cookie" / "cookie-файлы" / "куки-файлы" in any phrasing
     /(?:файл[а-яё]*[\s-]+(?:cookie|куки)|(?:cookie|куки)[\s-]+файл[а-яё]*)/gi,
     // Italian (IT)
-    /usiamo.{0,20}cookie/gi,
+    // e.g. "usiamo i cookie", "utilizziamo cookie tecnici", "questo sito utilizza i cookie", "noi e i nostri partner utilizziamo i cookie"
+    /(?:usiamo|utilizziamo).{0,20}cookie/gi,
+    /sito.{0,50}(?:usa|utilizza).{0,20}cookie/gi,
+    /noi e i nostri.{0,20}partner.{0,100}cookie/gi,
+    /(?:archiviare|memorizzare) e\/o accedere a informazioni su un dispositivo/gi,
+    // Swedish (SV)
+    // e.g. "vi använder cookies", "vi använder spårningstekniker såsom cookies", "webbplatsen använder kakor"
+    /(?:vi|webbplatsen|webbplats|sajten|sidan)\s+använder.{0,60}(?:cookies|kakor)/gi,
     // Japanese (JA)
     // e.g. "当サイトはCookieを使用しています", "クッキー（Cookie）を利用しています"
-    /(?:cookie|クッキー).{0,10}を(?:使用|利用)/gi
+    /(?:cookie|クッキー).{0,10}を(?:使用|利用)/gi,
+    // Danish (DA)
+    // e.g. "vi bruger cookies", "hjemmesiden bruger cookies til at ..."
+    /bruger cookies/gi,
+    // Norwegian (NO)
+    // e.g. "vi bruker informasjonskapsler", "kan vi bruke valgfrie informasjonskapsler", "nettstedet bruker cookies"
+    /\b(?:vi|nettstedet|nettsiden|siden)\s+bruker?\s.{0,60}?(?:informasjonskapsler|cookies)/gi
   ];
   var REJECT_PATTERNS_ENGLISH = [
     // e.g. "reject", "reject all", "reject all cookies", "deny all", "refuse cookies", "decline",
@@ -734,7 +769,31 @@
     "till\xE5t inte cookies",
     "jag accepterar endast grundl\xE4ggande kakor"
   ];
-  var REJECT_PATTERNS_CATALAN = [/(^|\s)rebutj/is, "no accepto", "no, gr\xE0cies"];
+  var REJECT_PATTERNS_DANISH = [
+    // afvis / afvis alle / afvis alle cookies (reject verbs)
+    /(^|\s)afvis/is,
+    // (accept/allow) only necessary cookies
+    /^(accepter\s+|tillad\s+)?(kun|udelukkende)\s+(strengt\s+)?nødvendige( cookies)?$/is,
+    // "nej tak" (no thanks)
+    /^nej(,?\s+tak)?$/is
+  ];
+  var REJECT_PATTERNS_NORWEGIAN = [
+    // avvis / avslå (reject verbs)
+    /(^|\s)(avvis|avslå)/is,
+    // (accept/allow/use) only necessary cookies
+    /^(godta\s+|tillat\s+|aksepter\s+|bruk\s+)?(kun|bare)\s+(strengt\s+)?nødvendige( (informasjonskapsler|cookies))?$/is,
+    // "nei" / "nei takk" (no thanks)
+    /^nei(,?\s+takk)?$/is
+  ];
+  var REJECT_PATTERNS_CATALAN = [
+    /(^|\s)rebutj/is,
+    "no accepto",
+    "no, gr\xE0cies",
+    // accept/allow/use (only) necessary / essential / technical / functional
+    /^\s*(acceptar?|accepto|permetre|utilitzar|usar)?\s*(només|sols|únicament)?\s*(les\s+|els\s+)?(galetes\s+|cookies?\s+)?(estrictament\s+)?(necess[aà]ri\w*|essencial\w*|tècni\w*|funcional\w*|imprescindibles)\s*$/is,
+    // continue without accepting
+    /^continuar sense acceptar/is
+  ];
   var REJECT_PATTERNS_GALICIAN = [/(^|\s)rexeitar/is];
   var REJECT_PATTERNS_BASQUE = [/(^|\s)(baztertu|ukatu)/is];
   var REJECT_PATTERNS_PORTUGUESE = [/^aceitar apenas cookies essenciais\.$/];
@@ -780,6 +839,8 @@
     ...REJECT_PATTERNS_BRAZILIAN_PORTUGUESE,
     ...REJECT_PATTERNS_SPANISH,
     ...REJECT_PATTERNS_SWEDISH,
+    ...REJECT_PATTERNS_DANISH,
+    ...REJECT_PATTERNS_NORWEGIAN,
     ...REJECT_PATTERNS_CATALAN,
     ...REJECT_PATTERNS_GALICIAN,
     ...REJECT_PATTERNS_BASQUE,
@@ -891,6 +952,9 @@
     "configura-les",
     "personalitza",
     "veure prefer\xE8ncies",
+    /^(configuració|personalitzar|preferències|més opcions)$/,
+    /^(configuració|preferències|opcions)( de( les)?)? (galetes|cookies?)$/is,
+    /^(gestiona|gestionar|configura|configurar|personalitza|personalitzar|veure|establir|administrar)( les)?( meves)? (preferències|galetes|cookies?|opcions)$/is,
     // Galician (GL)
     "xestionar preferencias",
     // Basque (EU)
@@ -1129,7 +1193,8 @@
     "kabul et",
     // Italian (IT)
     "accetta",
-    "accetta tutti i cookie"
+    "accetta tutti i cookie",
+    "accetto tutti i cookie"
   ];
   var ACKNOWLEDGE_PATTERNS = [
     // close / dismiss the banner/dialog/message (multilingual). The negative lookahead avoids
@@ -1163,6 +1228,8 @@
     "seguir",
     "vale",
     "\xA1vamos!",
+    // Catalan (CA)
+    /^(ho )?(entenc|entès|entesos)[ !.]*$/s,
     // Polish (PL)
     "kontynuuj",
     "ok, zrozumia\u0142em",
@@ -1204,6 +1271,10 @@
       }
     }
     return { patterns, snippets: snippets2 };
+  }
+  function hasHeuristicPatterns(allText, detectPatterns = DETECT_PATTERNS) {
+    const text = allText.slice(0, TEXT_LIMIT);
+    return detectPatterns.some((p) => text.search(p) !== -1);
   }
   function classifyButtons(buttons) {
     for (const button of buttons) {
@@ -1279,59 +1350,259 @@
   // lib/heuristics.ts
   var BUTTON_LIKE_ELEMENT_SELECTOR = 'button, input[type="button"], input[type="submit"], a, [role="button"], [class*="button"]';
   var POPUP_SEARCH_MAX_TIME = 100;
-  function getActionablePopups(mode = "reject", timeout = POPUP_SEARCH_MAX_TIME) {
-    const acceptedLevels = mode === "tier2" ? ["reject", "tier1", "tier2"] : mode === "tier1" ? ["reject", "tier1"] : ["reject"];
-    if (acceptedLevels.length === 0) {
+  var ACCEPTED_LEVELS = {
+    off: [],
+    reject: ["reject"],
+    tier1: ["reject", "tier1"],
+    tier2: ["reject", "tier1", "tier2"]
+  };
+  function getActionablePopups(mode = "reject", timeout = POPUP_SEARCH_MAX_TIME, hitTest = false) {
+    const acceptedLevels = ACCEPTED_LEVELS[mode];
+    const isActionable = (popup) => acceptedLevels.includes(popup.regexClassification) && isConsentPopup(popup);
+    const popups = searchPopups(timeout, hitTest, DEFAULT_HIT_TEST_GRID, true).filter(isActionable);
+    return popups.sort((a, b) => classificationRank(a) - classificationRank(b));
+  }
+  function searchPopups(timeout, hitTest, hitTestGrid, stopOnReject = false) {
+    if (!isTopFrame()) {
+      return getFramePopups();
+    }
+    const deadline = performance.now() + timeout;
+    const hitTestPopups = hitTest ? findPopupsByHitTest(deadline, hitTestGrid) : [];
+    if (stopOnReject && hitTestPopups.some((p) => p.regexClassification === "reject" && isConsentPopup(p))) {
+      return hitTestPopups;
+    }
+    const walkPopups = collectPositionedPopups(deadline);
+    return [...walkPopups, ...mergeWalkOverlaps(hitTestPopups, walkPopups)];
+  }
+  var consentPopups = /* @__PURE__ */ new WeakMap();
+  function classificationRank(popup) {
+    return ACCEPTED_LEVELS.tier2.indexOf(popup.regexClassification);
+  }
+  function isConsentPopup(popup) {
+    if (!ACCEPTED_LEVELS.tier2.includes(popup.regexClassification)) {
+      return false;
+    }
+    let result = consentPopups.get(popup);
+    if (result === void 0) {
+      const popupText = popup.text.trim();
+      result = !!popupText && !isExcludedPopup(popupText) && hasHeuristicPatterns(popupText);
+      consentPopups.set(popup, result);
+    }
+    return result;
+  }
+  function mergeWalkOverlaps(hitTestPopups, walkPopups) {
+    return hitTestPopups.filter((h) => {
+      const hitIsConsent = isConsentPopup(h);
+      const absorbs = (p) => !hitIsConsent || isConsentPopup(p) && classificationRank(p) <= classificationRank(h);
+      const walkPopup = walkPopups.find((p) => composedOverlaps(p.element, h.element) && absorbs(p));
+      if (walkPopup) {
+        (walkPopup.hitPoints ??= []).push(...h.hitPoints ?? []);
+      }
+      return !walkPopup;
+    });
+  }
+  function getFramePopups() {
+    if (window.parent && window.parent !== window.top) {
       return [];
     }
-    const popups = getPotentialPopups(timeout);
-    const result = popups.reduce((acc, popup) => {
-      const popupText = popup.text?.trim();
-      if (popupText) {
-        if (isExcludedPopup(popupText)) {
-          return acc;
-        }
-        const { patterns } = checkHeuristicPatterns(popupText);
-        if (patterns.length > 0) {
-          classifyButtons(popup.buttons);
-          popup.regexClassification = classifyPopup(popup.buttons);
-          acc.push({
-            ...popup
-          });
-        }
-      }
-      return acc;
-    }, []);
-    return result.filter((popup) => popup.regexClassification !== void 0 && acceptedLevels.includes(popup.regexClassification)).sort((a, b) => (a.regexClassification ?? "") > (b.regexClassification ?? "") ? 1 : -1);
-  }
-  function getPotentialPopups(timeout = POPUP_SEARCH_MAX_TIME) {
-    const isFramed = !isTopFrame();
-    if (isFramed && window.parent && window.parent !== window.top) {
+    const frameElement = getFramePopupElement(document);
+    const popup = frameElement && toPopupData(frameElement);
+    if (!popup) {
       return [];
     }
-    return collectPotentialPopups(isFramed, timeout);
+    popup.source = "frame";
+    return [popup];
   }
-  function collectPotentialPopups(isFramed, timeout = POPUP_SEARCH_MAX_TIME) {
-    let elements = [];
-    if (!isFramed) {
-      elements = getPopupLikeElements(timeout);
-    } else {
-      const doc = document.body || document.documentElement;
-      if (doc && isElementVisible(doc) && doc.innerText) {
-        elements.push(doc);
-      }
-    }
+  function collectPositionedPopups(deadline) {
+    const { elements, shadowHosts } = getPopupLikeElements(deadline);
     const potentialPopups = [];
+    const expanded = [];
     for (const el of elements) {
-      if (el.innerText) {
-        potentialPopups.push({
-          text: el.innerText,
-          element: el,
-          buttons: getButtonData(el)
-        });
+      const popup = toPopupData(el, shadowHosts);
+      if (!popup) {
+        continue;
+      }
+      const root = performance.now() > deadline ? popup : expandPopupFragment(popup, shadowHosts);
+      if (potentialPopups.some((p) => p.element === root.element)) {
+        continue;
+      }
+      if (root !== popup) {
+        expanded.push(root.element);
+      }
+      root.source = "walk";
+      potentialPopups.push(root);
+    }
+    return potentialPopups.filter((p) => !expanded.some((root) => root !== p.element && composedContains(root, p.element)));
+  }
+  var DEFAULT_HIT_TEST_GRID = {
+    columns: [0.1, 0.5, 0.9],
+    // banners sit along the top and bottom edges and modals in the middle; rows 150px in added almost nothing in crawls
+    edgeRows: [30, 90]
+  };
+  function findPopupsByHitTest(deadline, grid) {
+    const climbed = /* @__PURE__ */ new Map();
+    const found = [];
+    const toPopup = (el) => el.querySelector(TEXT_ENTRY_SELECTOR) ? null : toPopupRoot(el);
+    for (const [x, y] of getHitTestPoints(grid)) {
+      if (performance.now() > deadline) {
+        return found;
+      }
+      const path = [];
+      let reached = null;
+      const shouldStop = (el) => {
+        if (climbed.has(el)) {
+          reached = climbed.get(el) ?? null;
+          return true;
+        }
+        const overlapped = found.find((p) => composedOverlaps(p.element, el));
+        if (overlapped) {
+          reached = composedContains(overlapped.element, el) ? overlapped : null;
+          return true;
+        }
+        path.push(el);
+        return false;
+      };
+      const hit = closestHTMLElement(deepElementFromPoint(x, y));
+      const popup = climbToPopup(hit, MAX_HIT_TEST_CLIMB_DEPTH, toPopup, shouldStop);
+      if (popup) {
+        popup.source = "hitTest";
+        found.push(popup);
+        reached = popup;
+      }
+      for (const el of path) {
+        climbed.set(el, reached);
+      }
+      if (reached) {
+        (reached.hitPoints ??= []).push([x, y]);
       }
     }
-    return potentialPopups;
+    return found;
+  }
+  function getHitTestPoints(grid) {
+    const { innerWidth: width, innerHeight: height } = window;
+    const rows = [...grid.edgeRows, height / 2, ...grid.edgeRows.map((y) => height - y)].map((y) => Math.round(y));
+    const ys = [...new Set(rows)].filter((y) => y >= 0 && y < height);
+    return ys.flatMap((y) => grid.columns.map((column) => [Math.round(column * width), y]));
+  }
+  var TEXT_ENTRY_SELECTOR = 'textarea, input:not([type]), input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="tel"], input[type="number"], input[type="url"]';
+  function deepElementFromPoint(x, y) {
+    let el = document.elementFromPoint(x, y);
+    while (el?.shadowRoot) {
+      const inner = el.shadowRoot.elementFromPoint(x, y);
+      if (!inner || inner === el) {
+        break;
+      }
+      el = inner;
+    }
+    return el;
+  }
+  function closestHTMLElement(el) {
+    while (el && !(el instanceof HTMLElement)) {
+      el = el.parentElement;
+    }
+    return el;
+  }
+  function toPopupData(el, shadowHosts, text = getElementText(el)) {
+    if (!text) {
+      return null;
+    }
+    const buttons = getButtonData(el, shadowHosts);
+    classifyButtons(buttons);
+    return { text, element: el, buttons, regexClassification: classifyPopup(buttons) };
+  }
+  function hasPopupButtons(text, buttons) {
+    return !isOnlyButtonText(text, buttons) && buttons.some((b) => b.regexClassification !== "other");
+  }
+  function isOnlyButtonText(text, buttons) {
+    let rest = text;
+    for (const button of buttons) {
+      rest = rest.replace(button.text, "");
+    }
+    return rest.replace(/\s+/g, "").length < 10;
+  }
+  function toPopupRoot(el, shadowHosts) {
+    const text = getElementText(el);
+    if (!text || !hasHeuristicPatterns(text)) {
+      return null;
+    }
+    const popup = toPopupData(el, shadowHosts, text);
+    return popup && hasPopupButtons(text, popup.buttons) ? popup : null;
+  }
+  var MAX_FRAGMENT_EXPANSION_DEPTH = 6;
+  var MAX_HIT_TEST_CLIMB_DEPTH = 8;
+  function climbToPopup(el, maxDepth, toPopup, shouldStop) {
+    for (let depth = 0; el && depth < maxDepth; depth++, el = getComposedParent(el)) {
+      if (shouldStop?.(el) || el === document.body || el === document.documentElement || el.getBoundingClientRect().height > window.innerHeight) {
+        return null;
+      }
+      const popup = toPopup(el);
+      if (popup) {
+        return popup;
+      }
+    }
+    return null;
+  }
+  function expandPopupFragment(popup, shadowHosts) {
+    if (hasHeuristicPatterns(popup.text) && hasPopupButtons(popup.text, popup.buttons)) {
+      return popup;
+    }
+    const parent = getComposedParent(popup.element);
+    return climbToPopup(parent, MAX_FRAGMENT_EXPANSION_DEPTH, (el) => toPopupRoot(el, shadowHosts)) ?? popup;
+  }
+  function getComposedParent(el) {
+    if (el.parentElement) {
+      return el.parentElement;
+    }
+    const parent = el.parentNode;
+    return parent instanceof ShadowRoot && parent.host instanceof HTMLElement ? parent.host : null;
+  }
+  function getFramePopupElement(doc) {
+    const el = doc.body || doc.documentElement;
+    const win = doc.defaultView;
+    if (!el || !win || win.innerWidth === 0 || win.innerHeight === 0 || !isStyleVisible(el)) {
+      return null;
+    }
+    return getElementText(el).trim() ? el : null;
+  }
+  function isStyleVisible(el) {
+    return typeof el.checkVisibility !== "function" || el.checkVisibility({ checkVisibilityCSS: true });
+  }
+  function getElementText(el) {
+    const text = el.innerText || "";
+    if (!el.shadowRoot) {
+      return text;
+    }
+    const shadowTexts = Array.from(el.shadowRoot.children, (child) => isRenderedTextElement(child) ? getElementText(child) : "");
+    return [text, ...shadowTexts].filter((t) => t.trim()).join("\n");
+  }
+  function isRenderedTextElement(el) {
+    return el instanceof HTMLElement && !["STYLE", "SCRIPT", "TEMPLATE", "NOSCRIPT", "LINK", "SLOT"].includes(el.tagName) && window.getComputedStyle(el).display !== "none";
+  }
+  function composedOverlaps(a, b) {
+    return composedContains(a, b) || composedContains(b, a);
+  }
+  function composedContains(container, node) {
+    if (container.contains(node)) {
+      return true;
+    }
+    let root = node.getRootNode();
+    while (root instanceof ShadowRoot) {
+      if (container.contains(root.host)) {
+        return true;
+      }
+      root = root.host.getRootNode();
+    }
+    return false;
+  }
+  function isPopupCandidateVisible(el) {
+    return isElementVisible(el) && isStyleVisible(el) && isOnScreen(el);
+  }
+  function isOnScreen(el) {
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      return window.getComputedStyle(el).overflow === "visible" && Array.from(el.children).some((child) => isOnScreen(child));
+    }
+    return rect.bottom > 0 && rect.right > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth;
   }
   function isDialogLikeElement(node) {
     if (node.tagName === "DIALOG" && node.hasAttribute("open")) {
@@ -1342,72 +1613,95 @@
     }
     return false;
   }
-  function getPopupLikeElements(timeout = POPUP_SEARCH_MAX_TIME) {
-    const startTime = performance.now();
-    const walker = document.createTreeWalker(
-      document.documentElement,
-      NodeFilter.SHOW_ELEMENT,
-      // visit only element nodes
-      {
-        acceptNode(node) {
-          if (node.tagName === "BODY") {
+  function getPopupLikeElements(deadline) {
+    const found = [];
+    const shadowHosts = [];
+    const roots = [document.documentElement];
+    for (let i = 0; i < roots.length; i++) {
+      if (i > 0 && performance.now() > deadline) {
+        break;
+      }
+      const walker = document.createTreeWalker(
+        roots[i],
+        NodeFilter.SHOW_ELEMENT,
+        // visit only element nodes
+        {
+          acceptNode(node) {
+            if (node.shadowRoot) {
+              shadowHosts.push(node);
+              roots.push(node.shadowRoot);
+            }
+            if (node.tagName === "BODY") {
+              return NodeFilter.FILTER_SKIP;
+            }
+            const style = window.getComputedStyle(node);
+            if (style.display === "none") {
+              return NodeFilter.FILTER_REJECT;
+            }
+            const cssPosition = style.position;
+            if ((cssPosition === "fixed" || cssPosition === "sticky" || isDialogLikeElement(node)) && isPopupCandidateVisible(node)) {
+              return NodeFilter.FILTER_ACCEPT;
+            }
+            if (performance.now() > deadline) {
+              return NodeFilter.FILTER_REJECT;
+            }
             return NodeFilter.FILTER_SKIP;
           }
-          if (isElementVisible(node)) {
-            const cssPosition = window.getComputedStyle(node).position;
-            if (cssPosition === "fixed" || cssPosition === "sticky") {
-              return NodeFilter.FILTER_ACCEPT;
-            }
-            if (isDialogLikeElement(node)) {
-              return NodeFilter.FILTER_ACCEPT;
-            }
-          }
-          if (performance.now() - startTime > timeout) {
-            return NodeFilter.FILTER_REJECT;
-          }
-          return NodeFilter.FILTER_SKIP;
         }
+      );
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        found.push(node);
       }
-    );
-    const found = [];
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      found.push(node);
     }
-    return excludeContainers(found.filter((element) => element.innerText?.trim()));
+    return { elements: excludeContainers(found.filter((element) => getElementText(element).trim())), shadowHosts };
   }
-  function getButtonData(el) {
-    const actionableButtons = excludeContainers(getButtonLikeElements(el)).filter(
-      (b) => isElementVisible(b) && !isDisabled(b) && (b.innerText?.trim() || // <input> values do not appear in innerText
-      b instanceof HTMLInputElement && ["submit", "button"].includes(b.type) && b.value?.trim())
-    );
-    return actionableButtons.map((b) => ({
-      text: (b.innerText || b.textContent || "").trim() || b.value?.trim() || "",
-      element: b
-    }));
+  function getButtonData(el, shadowHosts) {
+    const buttons = [];
+    for (const b of excludeContainers(getButtonLikeElements(el, shadowHosts))) {
+      if (!isElementVisible(b) || isDisabled(b)) {
+        continue;
+      }
+      const text = getElementText(b).trim() || // <input> values do not appear in innerText
+      (b instanceof HTMLInputElement && ["submit", "button"].includes(b.type) ? b.value?.trim() : "");
+      if (text) {
+        buttons.push({ text, element: b });
+      }
+    }
+    return buttons;
   }
-  function getButtonLikeElements(el) {
-    return Array.from(el.querySelectorAll(BUTTON_LIKE_ELEMENT_SELECTOR));
+  function getButtonLikeElements(el, shadowHosts = findShadowHosts(el)) {
+    const buttons = Array.from(el.querySelectorAll(BUTTON_LIKE_ELEMENT_SELECTOR));
+    for (const host of shadowHosts) {
+      if (composedContains(el, host)) {
+        buttons.push(...host.shadowRoot.querySelectorAll(BUTTON_LIKE_ELEMENT_SELECTOR));
+      }
+    }
+    return buttons;
+  }
+  function findShadowHosts(root) {
+    const hosts = [];
+    const candidates = root instanceof HTMLElement ? [root, ...root.querySelectorAll("*")] : root.querySelectorAll("*");
+    for (const el of candidates) {
+      if (el.shadowRoot) {
+        hosts.push(el, ...findShadowHosts(el.shadowRoot));
+      }
+    }
+    return hosts;
   }
   function isDisabled(el) {
     return "disabled" in el && Boolean(el.disabled) || el.hasAttribute("disabled");
   }
   function excludeContainers(elements) {
-    const results = [];
-    if (elements.length > 0) {
-      for (let i = elements.length - 1; i >= 0; i--) {
-        let container = false;
-        for (let j = 0; j < elements.length; j++) {
-          if (i !== j && elements[i].contains(elements[j])) {
-            container = true;
-            break;
-          }
-        }
-        if (!container) {
-          results.push(elements[i]);
+    const candidates = new Set(elements);
+    const containers = /* @__PURE__ */ new Set();
+    for (const el of elements) {
+      for (let node = el.parentNode; node; node = node.parentNode || (node instanceof ShadowRoot ? node.host : null)) {
+        if (candidates.has(node)) {
+          containers.add(node);
         }
       }
     }
-    return results;
+    return elements.filter((el) => !containers.has(el)).reverse();
   }
 
   // lib/cmps/base.ts
@@ -1778,7 +2072,11 @@
     async detectCmp() {
       await new Promise((resolve) => setTimeout(resolve, 0));
       this.autoconsent.config.performanceLoggingEnabled && performance.mark("heuristicDetectorStart");
-      this.popups = getActionablePopups(this.mode, this.autoconsent.config.heuristicPopupSearchTimeout);
+      this.popups = getActionablePopups(
+        this.mode,
+        this.autoconsent.config.heuristicPopupSearchTimeout,
+        this.autoconsent.config.enableHeuristicHitTest
+      );
       this.autoconsent.config.performanceLoggingEnabled && performance.mark("heuristicDetectorEnd");
       this.autoconsent.config.performanceLoggingEnabled && performance.measure("heuristicDetector", "heuristicDetectorStart", "heuristicDetectorEnd");
       if (this.popups.length > 0) {
@@ -2201,6 +2499,18 @@
     get isCosmetic() {
       return false;
     }
+    // Some sites pre-render the banner before the SDK loads, and clicks before then may be lost.
+    // Sites that copy the markup without the SDK never get #onetrust-style, so only wait when the page loads the SDK.
+    async waitForSdk() {
+      if (this.elementExists("#onetrust-style")) {
+        return;
+      }
+      const sdkRef = /cookielaw\.org|otSDKStub|otBannerSdk/;
+      const sdkExpected = Array.from(document.scripts).some((s) => sdkRef.test(s.src) || !s.src && sdkRef.test(s.textContent || ""));
+      if (sdkExpected) {
+        await this.waitForElement("#onetrust-style", 1e4);
+      }
+    }
     async detectCmp() {
       return this.elementExists("#onetrust-banner-sdk") || this.elementVisible("#onetrust-pc-sdk", "any");
     }
@@ -2209,6 +2519,7 @@
     }
     async optOut() {
       await this.wait(500);
+      await this.waitForSdk();
       if (this.elementVisible("#onetrust-reject-all-handler", "any")) {
         return await this.click("#onetrust-reject-all-handler");
       }
@@ -2248,6 +2559,7 @@
       return true;
     }
     async optIn() {
+      await this.waitForSdk();
       return await this.click("#onetrust-accept-btn-handler,#accept-recommended-btn-handler,.js-accept-cookies");
     }
     async test() {
